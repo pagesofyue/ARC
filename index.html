@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For The Love of Pages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C2541;
+    --ink-soft:#4A5170;
+    --page-bg:#EAE7DC;
+    --card-bg:#FBF9F3;
+    --manila:#D9C8A0;
+    --manila-dark:#BFA974;
+    --stamp-red:#A63D2F;
+    --stamp-teal:#35635A;
+    --line:#C9C0A8;
+    --shadow: 0 2px 0 rgba(28,37,65,0.06), 0 8px 20px -12px rgba(28,37,65,0.25);
+    --radius: 3px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      linear-gradient(180deg, rgba(28,37,65,0.02), transparent 200px),
+      var(--page-bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+
+  a{color:inherit;}
+
+  /* Header */
+  header.masthead{
+    position:relative;
+    padding:56px 24px 36px;
+    text-align:center;
+    border-bottom:2px solid var(--ink);
+  }
+  header.masthead::before{
+    content:"";
+    position:absolute; inset:10px;
+    border:1px solid var(--ink);
+    opacity:0.25;
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--stamp-red);
+    margin-bottom:14px;
+  }
+  h1.title{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:clamp(2.4rem, 5vw, 4rem);
+    margin:0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .subtitle{
+    font-size:15px;
+    color:var(--ink-soft);
+    max-width:520px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+  .catalog-count{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:18px;
+  }
+
+  /* Pinned note */
+  .note-wrap{
+    max-width:760px;
+    margin:28px auto 0;
+    padding:0 24px;
+  }
+  .pinned-note{
+    position:relative;
+    background:var(--card-bg);
+    border:1px solid var(--ink);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:26px 26px 22px;
+    font-size:13.5px;
+    line-height:1.65;
+    color:var(--ink-soft);
+  }
+  .pinned-note::before{
+    content:"";
+    position:absolute;
+    top:-9px; left:50%;
+    transform:translateX(-50%) rotate(-3deg);
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--stamp-red);
+    box-shadow:0 2px 3px rgba(0,0,0,0.25);
+  }
+  .pinned-note h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:16px;
+    color:var(--ink);
+    margin:0 0 10px;
+  }
+  .pinned-note p{ margin:0 0 10px; }
+  .pinned-note p:last-child{ margin-bottom:0; }
+  .pinned-note .signoff{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--stamp-teal);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+
+  /* Controls */
+  .controls{
+    max-width:1100px;
+    margin:32px auto 0;
+    padding:0 24px;
+  }
+  .controls-inner{
+    background:var(--manila);
+    border:1px solid var(--manila-dark);
+    border-radius:8px;
+    padding:18px 22px 20px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:16px 22px;
+    align-items:flex-end;
+    box-shadow:var(--shadow);
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1 1 180px;
+    min-width:150px;
+  }
+  .field label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink);
+    opacity:0.7;
+  }
+  .field input[type="text"], .field select{
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--card-bg);
+    color:var(--ink);
+  }
+  .field input[type="text"]:focus, .field select:focus{
+    outline:2px solid var(--stamp-red);
+    outline-offset:1px;
+  }
+  .reset-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--ink);
+    border-radius:var(--radius);
+    padding:9px 14px;
+    cursor:pointer;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .reset-btn:hover{ background:var(--ink); color:var(--card-bg); }
+
+  /* Grid */
+  main{
+    max-width:1100px;
+    margin:36px auto 60px;
+    padding:0 24px;
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:26px 22px;
+  }
+  .empty-state{
+    grid-column:1/-1;
+    text-align:center;
+    padding:60px 20px;
+    font-family:'IBM Plex Mono', monospace;
+    color:var(--ink-soft);
+    border:1px dashed var(--line);
+    border-radius:8px;
+  }
+
+  /* Card */
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--ink);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    transition:transform 0.15s ease;
+  }
+  .card:hover{ transform:translateY(-3px); }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:10px; left:14px;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--page-bg);
+    box-shadow: 22px 0 0 var(--page-bg), 0 0 0 1px var(--line), 22px 0 0 1px var(--line);
+    z-index:2;
+  }
+  .genre-tab{
+    position:absolute;
+    top:0; right:16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:#fff;
+    padding:5px 10px 6px;
+    border-radius:0 0 4px 4px;
+    z-index:2;
+    max-width:calc(100% - 40px);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+.cover-frame {
+  width: 200px;
+  height: 300px;
+  margin: 0 auto;
+    background:var(--page-bg);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    margin-top:25px;
+  }
+
+.cover-frame img {
+  width: 200px;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+}
+  .card-body{
+    padding:14px 16px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+  }
+  .card-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:17px;
+    line-height:1.25;
+    margin:0;
+  }
+  .card-author{
+    font-size:13px;
+    color:var(--ink-soft);
+    font-style:italic;
+    margin:0 0 4px;
+  }
+  .card-series{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    opacity:0.8;
+    margin:-3px 0 4px;
+  }
+  .card-blurb{
+    font-size:12.5px;
+    line-height:1.5;
+    color:var(--ink-soft);
+    margin:0;
+    flex:1;
+  }
+
+  .trope-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px;
+    margin:2px 0 2px;
+  }
+  .trope-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--stamp-teal);
+    border:1px solid var(--stamp-teal);
+    border-radius:20px;
+    padding:2px 8px;
+  }
+
+  .stamp-strip{
+    border-top:1px dashed var(--line);
+    margin-top:10px;
+    padding-top:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink);
+    display:grid;
+    grid-template-columns:auto 1fr;
+    row-gap:4px;
+    column-gap:8px;
+  }
+  .stamp-strip dt{ opacity:0.55; }
+  .stamp-strip dd{ margin:0; text-align:right; }
+
+  .amazon-btn{
+    display:block;
+    text-align:center;
+    margin-top:12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    text-decoration:none;
+    background: #630330;     
+    color: #FFFFFF;
+    padding:9px 10px;
+    border-radius:var(--radius);
+  }
+  .amazon-btn:hover{ background:var(--stamp-red); }
+
+  /* Footer */
+  footer{
+    border-top:2px solid var(--ink);
+    padding:36px 24px 44px;
+    text-align:center;
+  }
+  .footer-links{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px 18px;
+    margin-bottom:14px;
+  }
+  .footer-links a{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-decoration:none;
+    color:var(--ink);
+    border-bottom:1px solid var(--stamp-red);
+    padding-bottom:1px;
+  }
+  .footer-links a:hover{ color:var(--stamp-red); }
+  .kofi-section{
+    max-width:1100px;
+    margin:22px auto 0;
+    padding:0 24px;
+    text-align:center;
+  }
+  .footer-note{
+    font-size:11px;
+    color:var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="eyebrow">reader recommended &middot; indie focused</div>
+  <h1 class="title">For The Love of Pages</h1>
+ <p class="subtitle" style="font-size: 88%;">A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
+  <div class="catalog-count" id="catalogCount"></div>
+</header>
+
+<div class="note-wrap">
+  <div class="pinned-note">
+    <h2>Before you browse</h2>
+    <p><strong>For The Love of Pages</strong> is not affiliated with any authors, publishers, or PR teams whose books appear here. This is a personal catalog, not an official partnership. I do not charge for book features or receive payment for promoting books. Any support through Ko-fi is entirely voluntary and never required for a book to be featured.</p>
+    <p>If you're an author or part of a PR team and would like your book featured or removed, please feel free to reach out. Everything here is shared in good faith, and I never want to overstep. My goal is simply to help connect readers with authors and their books. </p>
+    <p>This is a community space for readers and authors to share books they've written, discovered, or loved, with a special focus on indie authors. Have a book you think belongs here? Send me a DM on social media.</p>
+    <p>Please note that updates may not always be in real time. I run this alongside my 9-to-5 job, so new books are added whenever I can, ideally daily. Saturdays are my dedicated update day, though I may add books throughout the week when time allows. </p>
+    <p class="signoff">A follow or a little love on my socials, @pagesofyue, or at pagesofyue.com is always appreciated, but <b><u>NEVER</b></u> required. 
+
+<p><i>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</p></i>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="controls-inner">
+    <div class="field">
+      <label for="searchInput">Search</label>
+      <input type="text" id="searchInput" placeholder="Title or author">
+    </div>
+    <div class="field">
+      <label for="genreSelect">Genre</label>
+      <select id="genreSelect">
+        <option value="">All genres</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="platformSelect">Platform</label>
+      <select id="platformSelect">
+        <option value="">All platforms</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="tropeSelect">Trope</label>
+      <select id="tropeSelect">
+        <option value="">All tropes</option>
+      </select>
+    </div>
+    <button class="reset-btn" id="resetBtn">Clear filters</button>
+  </div>
+</div>
+
+<div class="kofi-section">
+  <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+  <script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#7a2c69', 'W4Y820FD7J');kofiwidget2.draw();</script>
+</div>
+
+<div style="text-align: center;">
+  <h3 style="
+    display: inline-block;
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    margin: 50px 0;
+    color: #702963;
+    border: 2px dashed #702963;
+    border-radius: 10px;
+    padding: 15px;
+  ">
+    CLICK IMAGE TO REQUEST ARC
+  </h3>
+</div>
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="footer-links" id="footerLinks">
+    <!-- populated by script; edit the FOOTER_LINKS list below -->
+  </div>
+  <div class="footer-note">For The Love of Pages. Updated by hand, one ARC at a time.</div>
+</footer>
+
+<script>
+  /*
+    ================================================================
+    BOOK DATA
+ ================================================================
+    This is placeholder sample data so the page has something to
+    show while the design is being reviewed. This block will be
+    replaced with a live connection to your Google Sheet in the
+    next step, so you will not be editing this list directly once
+    that is wired up.
+
+    FIELD GUIDE
+    - title, author   : as expected
+    - series          : optional. Something like "Book 2 of The Salt
+                        Glass Trilogy". Leave as "" for standalones.
+    - cover           : image link
+    - genres          : list of genres, first one sets the tab color
+    - tropes          : list of tropes, shown as small tags on the
+                        card, and filterable/sortable like genres
+    - platform        : NetGalley, Edelweiss, an indie author's name,
+                        a publisher, or a PR team, whichever applies
+    - releaseDate     : "YYYY-MM-DD", used for sorting
+    - blurb           : one or two sentence note
+    - amazonLink      : optional. If filled in, a Buy on Amazon
+                        button appears on the card. Leave as ""
+                        for books that are still ARCs only.
+  */
+  const BOOKS = [
+    {
+      title: "Just Between Us",
+      author: "Jenny Cross",
+      series: "Book 3 of Singing River Sound",
+      cover: "https://m.media-amazon.com/images/I/81CmAztyGmL._SY466_.jpg",
+      genres: ["Romance"],
+      tropes: ["Small Town"],
+      platform: "Direct",
+      releaseDate: "2026-07-18",
+      blurb: "",
+      amazonLink: ""
+    },
+    {
+      title: "Nine Ways to Vanish",
+      author: "Priya Ashworth",
+      cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&q=80",
+      genres: ["Mystery", "Thriller"],
+      tropes: ["Cold case", "Small town secrets"],
+      platform: "Author Direct",
+      releaseDate: "2026-08-02",
+      blurb: "",
+      amazonLink: ""
+    },
+          {
+      title: "Low Tide at Cape Merrow",
+      author: "Junie Halvorsen",
+      cover: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=600&q=80",
+      genres: ["Formula 1"],
+      tropes: ["Slow burn", "Single parent"],
+      platform: "BookSirens",
+      releaseDate: "2026-07-22",
+      blurb: "",
+      amazonLink: "https://www.amazon.com/"
+    },
+    {
+      title: "The Ledger of Small Gods",
+      author: "Tomasz Ferreira",
+      cover: "https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=600&q=80",
+      genres: ["Fantasy", "Historical Fiction"],
+      tropes: ["Morally gray protagonist", "Slow burn"],
+      platform: "Storytime Book Tours",
+      releaseDate: "2026-10-28",
+      blurb: "",
+      amazonLink: ""
+    }
+  ];
+
+  /*
+    ================================================================
+    FOOTER LINKS
+    ================================================================
+    Edit this list to change what shows in the footer. Order here
+    is the order they appear on the page. This block will move to
+    the second tab of your Google Sheet in the next step.
+  */
+  const FOOTER_LINKS = [
+    { label: "Instagram", url: "https://instagram.com/pagesofyue" },
+    { label: "Threads", url: "https://threads.com/@pagesofyue" },
+    { label: "TikTok", url: "https://tiktok.com/pagesofyue" },
+    { label: "pagesofyue.com", url: "https://pagesofyue.com/" }
+  ];
+
+  /*
+    ================================================================
+    GENRE COLORS
+    ================================================================
+    Set a specific color for any genre here, using its exact name
+    as it appears in your book data. Any genre you do NOT list here
+    just gets an automatic color from the fallback palette below,
+    so new genres never break anything, they just won't be
+    hand picked until you add them here.
+
+    Colors can be any valid CSS color: a hex code like "#2F6B62",
+    or a name like "seagreen".
+  */
+  const GENRE_COLOR_MAP = {
+    "Fantasy": "#120A2A ",
+    "Romantasy": "#4E1222  ",
+    "Romance": "#9C4368",
+"Mystery" : "#301e4e",
+"Formula 1" : "#FF1E00"
+
+  };
+
+  const GENRE_COLORS = {};
+  const PALETTE = ['#A63D2F','#35635A','#7A5C8E','#B5842A','#3E6A96','#8A5A3A','#5E6B3A','#9C4368'];
+  function colorForGenre(g){
+    if(GENRE_COLOR_MAP[g]) return GENRE_COLOR_MAP[g];
+    if(!GENRE_COLORS[g]){
+      const idx = Object.keys(GENRE_COLORS).length % PALETTE.length;
+      GENRE_COLORS[g] = PALETTE[idx];
+    }
+    return GENRE_COLORS[g];
+  }
+
+  const grid = document.getElementById('grid');
+  const searchInput = document.getElementById('searchInput');
+  const genreSelect = document.getElementById('genreSelect');
+  const platformSelect = document.getElementById('platformSelect');
+  const tropeSelect = document.getElementById('tropeSelect');
+  const resetBtn = document.getElementById('resetBtn');
+  const catalogCount = document.getElementById('catalogCount');
+  const footerLinksEl = document.getElementById('footerLinks');
+
+  function uniqueSorted(values){
+    return [...new Set(values)].sort((a,b)=>a.localeCompare(b));
+  }
+
+  function populateFilters(){
+    const allGenres = uniqueSorted(BOOKS.flatMap(b=>b.genres || []));
+    allGenres.forEach(g=>{
+      colorForGenre(g);
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      genreSelect.appendChild(opt);
+    });
+
+    const allPlatforms = uniqueSorted(BOOKS.map(b=>b.platform).filter(Boolean));
+    allPlatforms.forEach(p=>{
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      platformSelect.appendChild(opt);
+    });
+
+    const allTropes = uniqueSorted(BOOKS.flatMap(b=>b.tropes || []));
+    allTropes.forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t; opt.textContent = t;
+      tropeSelect.appendChild(opt);
+    });
+  }
+
+  function renderFooter(){
+    footerLinksEl.innerHTML = '';
+    FOOTER_LINKS.forEach(link=>{
+      const a = document.createElement('a');
+      a.href = link.url;
+      a.textContent = link.label;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      footerLinksEl.appendChild(a);
+    });
+  }
+
+  function formatDate(iso){
+    if(!iso) return 'TBA';
+    const d = new Date(iso + 'T00:00:00');
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+
+  function renderCard(book){
+    const primaryGenre = (book.genres && book.genres[0]) || 'Uncategorized';
+    const tabColor = colorForGenre(primaryGenre);
+
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <span class="genre-tab" style="background:${tabColor}">${primaryGenre}</span>
+      <div class="cover-frame">
+        <img src="${book.cover || ''}" alt="Cover of ${book.title}" loading="lazy"
+             onerror="this.style.display='none'">
+      </div>
+      <div class="card-body">
+        <p class="card-title">${book.title}</p>
+        <p class="card-author">${book.author}</p>
+        ${book.series ? `<p class="card-series">${book.series}</p>` : ''}
+        ${(book.tropes && book.tropes.length) ? `<div class="trope-tags">${book.tropes.map(t=>`<span class="trope-tag">${t}</span>`).join('')}</div>` : ''}
+        <p class="card-blurb">${book.blurb || ''}</p>
+        <dl class="stamp-strip">
+          <dt>Platform</dt><dd>${book.platform || 'Not listed'}</dd>
+          <dt>Release</dt><dd>${formatDate(book.releaseDate)}</dd>
+        </dl>
+        ${book.amazonLink ? `<a class="amazon-btn" href="${book.amazonLink}" target="_blank" rel="noopener noreferrer">Buy on Amazon</a>` : ''}
+      </div>
+    `;
+    return card;
+  }
+
+  function applyFiltersAndRender(){
+    const q = searchInput.value.trim().toLowerCase();
+    const genre = genreSelect.value;
+    const platform = platformSelect.value;
+    const trope = tropeSelect.value;
+
+    let filtered = BOOKS.filter(b=>{
+      const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+      const matchesGenre = !genre || (b.genres || []).includes(genre);
+      const matchesPlatform = !platform || b.platform === platform;
+      const matchesTrope = !trope || (b.tropes || []).includes(trope);
+      return matchesQ && matchesGenre && matchesPlatform && matchesTrope;
+    });
+
+    filtered.sort((a,b)=> a.title.localeCompare(b.title));
+
+    grid.innerHTML = '';
+    if(filtered.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = 'No ARCs match those filters. Try clearing one.';
+      grid.appendChild(empty);
+    } else {
+      filtered.forEach(b=> grid.appendChild(renderCard(b)));
+    }
+
+    catalogCount.textContent = `${filtered.length} of ${BOOKS.length} ARCs shown`;
+  }
+
+  [searchInput, genreSelect, platformSelect, tropeSelect].forEach(el=>{
+    el.addEventListener('input', applyFiltersAndRender);
+    el.addEventListener('change', applyFiltersAndRender);
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    searchInput.value = '';
+    genreSelect.value = '';
+    platformSelect.value = '';
+    tropeSelect.value = '';
+    applyFiltersAndRender();
+  });
+
+  populateFilters();
+  renderFooter();
+  applyFiltersAndRender();
+</script>
+
+<script>
+  function setupReadMoreToggles() {
+    // Finds common paragraph and blurb class targets automatically
+    const blurbs = document.querySelectorAll('.book-card p, .blurb, .book-blurb, p');
+
+    blurbs.forEach((el, index) => {
+      // Skips text blocks shorter than 450 characters or elements already processed
+      if (el.textContent.length < 450 || el.querySelector('.read-more-btn')) return;
+
+      const fullText = el.textContent.trim();
+      const visibleText = fullText.substring(0, 300);
+      const hiddenText = fullText.substring(300);
+
+      // Re-architects paragraph node to hold splitting text spans and a custom button
+      el.innerHTML = `
+        <span>${visibleText}</span><span id="dots-auto-${index}">...</span><span id="more-auto-${index}" style="display: none;">${hiddenText}</span>
+        <div style="margin-top: 10px;">
+          <button class="read-more-btn" id="btn-auto-${index}" style="
+            background-color: #483248;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+            transition: opacity 0.2s ease;
+          ">Read More</button>
+        </div>
+      `;
+
+      // Click Event Controller Activation
+      const btn = document.getElementById(`btn-auto-${index}`);
+      
+      // Simple hover effect
+      btn.addEventListener('mouseenter', () => btn.style.opacity = '0.9');
+      btn.addEventListener('mouseleave', () => btn.style.opacity = '1');
+      
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const dots = document.getElementById(`dots-auto-${index}`);
+        const moreText = document.getElementById(`more-auto-${index}`);
+
+        if (dots.style.display === "none") {
+          dots.style.display = "inline";
+          this.innerHTML = "Read More";
+          moreText.style.display = "none";
+        } else {
+          dots.style.display = "none";
+          this.innerHTML = "Read Less";
+          moreText.style.display = "inline";
+        }
+      });
+    });
+  }
+
+  // Lifecycle execution triggers
+  window.addEventListener('DOMContentLoaded', setupReadMoreToggles);
+  setInterval(setupReadMoreToggles, 1000);
+</script>
+
+
+
+</body>
+</html>
