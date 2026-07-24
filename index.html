@@ -93,10 +93,11 @@
     font-size:clamp(2.4rem, 5vw, 4rem);
     margin:0 0 10px;
     letter-spacing:-0.01em;
+  color:#770737;
   }
   .subtitle{
     font-size:15px;
-    color:var(--ink-soft);
+    color: #483248;
     max-width:520px;
     margin:0 auto;
     line-height:1.5;
@@ -116,7 +117,7 @@
   .catalog-count{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
-    color:var(--ink-soft);
+    color:#483248;
     margin-top:18px;
   }
 
@@ -435,6 +436,18 @@
     padding-top:8px;
     border-top:1px dashed var(--line);
   }
+  .ending-soon-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:clamp(8.5px, 2.8cqw, 10.5px);
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    text-align:center;
+    color:#fff;
+    background:var(--stamp-red);
+    border-radius:20px;
+    padding:clamp(3px,1cqw,5px) clamp(6px,2cqw,10px);
+    margin-top:6px;
+  }
 
   .details-btn{
     margin-top:10px;
@@ -604,6 +617,9 @@
     max-width:760px;
     margin:0 auto 10px;
     padding:0 24px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
   }
 .status-banner{
   position:relative;
@@ -653,7 +669,7 @@
 <header class="masthead">
   <div class="eyebrow">reader recommended &middot; indie focused</div>
   <h1 class="title">For The Love of Pages</h1>
- <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion">This is a companion to my review site, pagesofyue.com </span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
+ <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion"><i>This is a companion to my review site, pagesofyue.com </i> </span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
   <div class="catalog-count" id="catalogCount"></div>
 </header>
 
@@ -665,9 +681,9 @@
     <p>If you're an author or part of a PR team and would like your book featured or removed, please feel free to reach out. Everything here is shared in good faith, and I never want to overstep. My goal is simply to help connect readers with authors and their books. </p>
     <p>This is a community space for readers and authors to share books they've written, discovered, or loved, with a special focus on indie authors. Have a book you think belongs here? Send me a DM on social media.</p>
     <p>Please note that updates may not always be in real time. I run this alongside my 9-to-5 job, so new books are added whenever I can, ideally daily. Saturdays are my dedicated update day, though I may add books throughout the week when time allows. </p>
-    <p class="signoff">A follow or a little love on my socials, @pagesofyue, or at pagesofyue.com is always appreciated, but <b><u>NEVER</b></u> required. 
+    <p class="signoff">A follow or a little love on my socials, @pagesofyue, or at pagesofyue.com is always appreciated, but <b><u>NEVER</u></b> required.</p>
 
-<p><i>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</p></i>
+    <p><i>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</i></p>
   </div>
 </div>
 
@@ -725,12 +741,7 @@
   </h3>
 </div>
 
-<div class="status-wrap" id="statusWrap" style="display:none;">
-  <div class="status-banner">
-    <span id="statusMessage"></span>
-    <button class="status-close" id="statusClose" aria-label="Dismiss update">&times;</button>
-  </div>
-</div>
+<div class="status-wrap" id="statusWrap" style="display:none;"></div>
 
 <main>
   <div class="grid" id="grid"></div>
@@ -755,6 +766,7 @@
       <p class="modal-title" id="modalTitle"></p>
       <p class="modal-series" id="modalSeries"></p>
       <p class="modal-author" id="modalAuthor"></p>
+      <div class="ending-soon-badge" id="modalEndingSoon" style="display:none;"></div>
       <dl class="modal-stamp-strip" id="modalStampStrip"></dl>
       <p class="modal-blurb" id="modalBlurb"></p>
       <p class="modal-request-note">Interested? Click the book cover on the homepage to request or buy a copy.</p>
@@ -808,11 +820,15 @@
     Set this up as a second tab in your Google Sheet, headers:
     Message | Active | Last Updated
 
-    - Message: the text you want shown in the banner
+    You can add multiple rows now, every row with Active set to Show
+    will display as its own banner, stacked in the order they appear
+    in the sheet. Each one is dismissed independently.
+
+    - Message: the text you want shown in that banner
     - Active: type Show to display it, Hide (or leave blank) to hide it
     - Last Updated: a plain date you type yourself, e.g. "July 24, 2026"
-      Shown at the bottom of the site regardless of whether the
-      banner itself is Active or Hide.
+      Only needs to be filled in on one row, shown at the bottom of
+      the site regardless of how many banners are Active.
 
     Publish just that tab to web as CSV (same process as your books
     tab), paste the link below. Leave the placeholder as is to skip
@@ -828,15 +844,34 @@
       header: true,
       skipEmptyLines: true,
       complete: function(results){
-        const row = (results.data || [])[0] || {};
-        const message = (row['Message']||'').trim();
-        const active = (row['Active']||'').trim().toLowerCase();
-        const lastUpdated = (row['Last Updated']||'').trim();
+        const rows = results.data || [];
+        const statusWrap = document.getElementById('statusWrap');
+        statusWrap.innerHTML = '';
 
-        if(message && active === 'show'){
-          document.getElementById('statusMessage').textContent = message;
-          document.getElementById('statusWrap').style.display = 'block';
-        }
+        let anyShown = false;
+        let lastUpdated = '';
+
+        rows.forEach(row=>{
+          const message = (row['Message']||'').trim();
+          const active = (row['Active']||'').trim().toLowerCase();
+          const rowLastUpdated = (row['Last Updated']||'').trim();
+          if(rowLastUpdated && !lastUpdated) lastUpdated = rowLastUpdated;
+
+          if(message && active === 'show'){
+            anyShown = true;
+            const banner = document.createElement('div');
+            banner.className = 'status-banner';
+            banner.innerHTML = `<span></span><button class="status-close" aria-label="Dismiss update">&times;</button>`;
+            banner.querySelector('span').textContent = message;
+            banner.querySelector('.status-close').addEventListener('click', function(){
+              banner.remove();
+              if(!statusWrap.querySelector('.status-banner')) statusWrap.style.display = 'none';
+            });
+            statusWrap.appendChild(banner);
+          }
+        });
+
+        statusWrap.style.display = anyShown ? 'flex' : 'none';
         if(lastUpdated){
           document.getElementById('lastUpdated').textContent = 'Last updated: ' + lastUpdated;
         }
@@ -1060,6 +1095,25 @@
     return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
   }
 
+  const ENDING_SOON_THRESHOLD_DAYS = 7;
+
+  function daysUntil(iso){
+    if(!iso) return null;
+    const target = new Date(iso + 'T00:00:00');
+    if(isNaN(target)) return null;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const diffMs = target - today;
+    return Math.ceil(diffMs / 86400000);
+  }
+
+  function endingSoonBadgeHTML(book){
+    const days = daysUntil(book.arcReleaseDate);
+    if(days === null || days <= 0 || days > ENDING_SOON_THRESHOLD_DAYS) return '';
+    const dayLabel = days === 1 ? '1 day left to apply' : `${days} days left to apply`;
+    return `<div class="ending-soon-badge">Ending Soon &middot; ${dayLabel}</div>`;
+  }
+
   const COVER_PLACEHOLDER_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>`;
 
   function coverContentHTML(book){
@@ -1088,6 +1142,7 @@
         <p class="card-author">${book.author}</p>
         ${book.series ? `<p class="card-series">${book.series}</p>` : ''}
         <p class="card-platform">${book.platform || 'Not listed'}</p>
+        ${endingSoonBadgeHTML(book)}
         <button class="details-btn" data-book-index="${index}">Details</button>
       </div>
     `;
@@ -1113,10 +1168,22 @@
       return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope;
     });
 
+    function effectiveDateKey(b){
+      return b.arcReleaseDate || b.releaseDate || '';
+    }
+
     filtered.sort((a,b)=>{
       const aIsAmazon = (a.platform||'').toLowerCase().includes('amazon');
       const bIsAmazon = (b.platform||'').toLowerCase().includes('amazon');
       if(aIsAmazon !== bIsAmazon) return aIsAmazon ? 1 : -1;
+
+      const aKey = effectiveDateKey(a);
+      const bKey = effectiveDateKey(b);
+      const aHasDate = !!aKey;
+      const bHasDate = !!bKey;
+      if(aHasDate !== bHasDate) return aHasDate ? -1 : 1;
+      if(aHasDate && bHasDate && aKey !== bKey) return aKey.localeCompare(bKey);
+
       return a.title.localeCompare(b.title);
     });
 
@@ -1226,6 +1293,16 @@
     document.getElementById('modalAuthor').textContent = book.author;
     document.getElementById('modalBlurb').textContent = book.blurb || '';
 
+    const modalEndingSoonEl = document.getElementById('modalEndingSoon');
+    const endingSoonHTML = endingSoonBadgeHTML(book);
+    if(endingSoonHTML){
+      const days = daysUntil(book.arcReleaseDate);
+      modalEndingSoonEl.textContent = 'Ending Soon \u00b7 ' + (days === 1 ? '1 day left to apply' : `${days} days left to apply`);
+      modalEndingSoonEl.style.display = 'block';
+    } else {
+      modalEndingSoonEl.style.display = 'none';
+    }
+
     let stampRows = `<dt>Platform</dt><dd>${book.platform || 'Not listed'}</dd>`;
     stampRows += `<dt>Release Date</dt><dd>${formatDate(book.releaseDate)}</dd>`;
     if(book.arcReleaseDate){
@@ -1264,10 +1341,6 @@
 
   document.getElementById('noteClose').addEventListener('click', function(){
     document.getElementById('noteWrap').style.display = 'none';
-  });
-
-  document.getElementById('statusClose').addEventListener('click', function(){
-    document.getElementById('statusWrap').style.display = 'none';
   });
 
   renderFooter();
