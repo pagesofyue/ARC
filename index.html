@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>For The Love of Pages</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CjxyZWN0IHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgcng9IjciIGZpbGw9IiNEOUM4QTAiLz4KPHBhdGggZD0iTTE2IDEwIEMxMy4yIDggOSA3LjggNi44IDguOCBWMjMuNSBDOSAyMi41IDEzLjIgMjIuNyAxNiAyNC43IEMxOC44IDIyLjcgMjMgMjIuNSAyNS4yIDIzLjUgVjguOCBDMjMgNy44IDE4LjggOCAxNiAxMCBaIiBmaWxsPSJub25lIiBzdHJva2U9IiMxQzI1NDEiIHN0cm9rZS13aWR0aD0iMS43IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+CjxsaW5lIHgxPSIxNiIgeTE9IjEwIiB4Mj0iMTYiIHkyPSIyNC43IiBzdHJva2U9IiMxQzI1NDEiIHN0cm9rZS13aWR0aD0iMS43Ii8+Cjwvc3ZnPg==">
 <meta name="description" content="A community catalog of ARCs, especially from indie authors. Browse by genre, author, platform, and trope.">
 
 <!--
@@ -313,11 +314,11 @@
   .card::before{
     content:"";
     position:absolute;
-    top:10px; left:14px;
-    width:8px; height:8px;
+    top:clamp(8px, 3.2cqw, 12px); left:clamp(11px, 4.2cqw, 16px);
+    width:clamp(7px, 2.8cqw, 10px); height:clamp(7px, 2.8cqw, 10px);
     border-radius:50%;
     background:var(--page-bg);
-    box-shadow: 22px 0 0 var(--page-bg), 0 0 0 1px var(--line), 22px 0 0 1px var(--line);
+    box-shadow: clamp(16px, 6.6cqw, 26px) 0 0 var(--page-bg), 0 0 0 1px var(--line), clamp(16px, 6.6cqw, 26px) 0 0 1px var(--line);
     z-index:2;
   }
   .genre-tab{
@@ -336,12 +337,14 @@
     text-overflow:ellipsis;
     white-space:nowrap;
   }
+.cover-wrap{
+  padding: clamp(20px, 7cqw, 30px) clamp(12px, 4cqw, 18px) clamp(8px, 3cqw, 14px);
+}
 .cover-frame {
   width: 100%;
   aspect-ratio: 2 / 3;
-  margin: clamp(14px, 5cqw, 25px) auto 0;
   background:var(--page-bg);
-  border-bottom:1px solid var(--line);
+  border:1px solid var(--line);
   overflow:hidden;
 }
 
@@ -604,8 +607,10 @@
   }
   .status-banner{
     position:relative;
-    background:var(--stamp-teal);
-    color:#fff;
+    background:#F4EDDD;
+    color:var(--ink);
+    border:1px solid var(--manila-dark);
+    border-left:4px solid var(--stamp-teal);
     border-radius:var(--radius);
     padding:11px 40px 11px 16px;
     font-family:'IBM Plex Mono', monospace;
@@ -619,11 +624,11 @@
     transform:translateY(-50%);
     background:none;
     border:none;
-    color:#fff;
+    color:var(--ink);
     font-size:18px;
     line-height:1;
     cursor:pointer;
-    opacity:0.85;
+    opacity:0.6;
   }
   .status-close:hover{ opacity:1; }
   .last-updated{
@@ -1071,8 +1076,10 @@
     card.className = 'card';
     card.innerHTML = `
       <span class="genre-tab" style="background:${tabColor}">${primaryGenre}</span>
-      <div class="cover-frame">
-        ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
+      <div class="cover-wrap">
+        <div class="cover-frame">
+          ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
+        </div>
       </div>
       <div class="card-body">
         <p class="card-title">${book.title}</p>
