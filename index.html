@@ -4,6 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>For The Love of Pages</title>
+<meta name="description" content="A community catalog of ARCs, especially from indie authors. Browse by genre, author, platform, and trope.">
+
+<!--
+  SOCIAL PREVIEW (what shows up when this link is shared on
+  Instagram, Discord, iMessage, etc.)
+
+  Everything below already works except the image. Upload a nice
+  square-ish banner image (your logo, a stack of covers, anything
+  representative) to imgbb.com or postimages.org the same way you
+  do for book covers, then paste that direct image link into
+  og:image and twitter:image below. Until then, shared links will
+  just show the title and description with no image.
+-->
+<meta property="og:title" content="For The Love of Pages">
+<meta property="og:description" content="A community catalog of ARCs, especially from indie authors. Browse by genre, author, platform, and trope.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://arc.pagesofyue.com">
+<meta property="og:image" content="PASTE_YOUR_PREVIEW_IMAGE_LINK_HERE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="For The Love of Pages">
+<meta name="twitter:description" content="A community catalog of ARCs, especially from indie authors.">
+<meta name="twitter:image" content="PASTE_YOUR_PREVIEW_IMAGE_LINK_HERE">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -76,6 +99,18 @@
     max-width:520px;
     margin:0 auto;
     line-height:1.5;
+  }
+  .subtitle-companion{
+    display:block;
+    width:100vw;
+    max-width:100vw;
+    margin-left:calc(-50vw + 50%);
+    margin-bottom:4px;
+    font-size:clamp(9px, 2.3vw, 12.5px);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    opacity:0.85;
   }
   .catalog-count{
     font-family:'IBM Plex Mono', monospace;
@@ -225,6 +260,41 @@
     border:1px dashed var(--line);
     border-radius:8px;
   }
+  .pagination{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    margin-top:36px;
+  }
+  .page-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    border:1px solid var(--ink);
+    background:var(--card-bg);
+    color:var(--ink);
+    border-radius:var(--radius);
+    padding:7px 12px;
+    cursor:pointer;
+    min-width:36px;
+  }
+  .page-btn:hover{ background:var(--manila); }
+  .page-btn.active{
+    background:var(--ink);
+    color:var(--card-bg);
+    cursor:default;
+  }
+  .page-btn:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+  }
+  .page-ellipsis{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    padding:0 4px;
+  }
 
   /* Card */
   .card{
@@ -283,6 +353,24 @@
 .cover-frame img {
   object-fit: cover;
 }
+.cover-placeholder{
+  width:100%; height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  background:
+    repeating-linear-gradient(135deg, var(--page-bg), var(--page-bg) 10px, #E2DECE 10px, #E2DECE 20px);
+  color:var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+  font-size:clamp(9px, 3cqw, 11px);
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  text-align:center;
+  padding:10px;
+}
+.cover-placeholder svg{ width:28px; height:28px; opacity:0.5; }
   .card-body{
     padding:clamp(10px,3.2cqw,16px) clamp(10px,3.6cqw,16px) clamp(10px,3.2cqw,16px);
     display:flex;
@@ -509,6 +597,42 @@
     padding:0 24px;
     text-align:center;
   }
+  .status-wrap{
+    max-width:760px;
+    margin:0 auto 10px;
+    padding:0 24px;
+  }
+  .status-banner{
+    position:relative;
+    background:var(--stamp-teal);
+    color:#fff;
+    border-radius:var(--radius);
+    padding:11px 40px 11px 16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    text-align:center;
+  }
+  .status-close{
+    position:absolute;
+    top:50%; right:10px;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    color:#fff;
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    opacity:0.85;
+  }
+  .status-close:hover{ opacity:1; }
+  .last-updated{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    opacity:0.8;
+    margin-top:4px;
+  }
   .footer-note{
     font-size:11px;
     color:var(--ink-soft);
@@ -521,7 +645,7 @@
 <header class="masthead">
   <div class="eyebrow">reader recommended &middot; indie focused</div>
   <h1 class="title">For The Love of Pages</h1>
- <p class="subtitle" style="font-size: 88%;">A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
+ <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion">For The Love of Pages is a companion to my review site, pagesofyue.com.</span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
   <div class="catalog-count" id="catalogCount"></div>
 </header>
 
@@ -590,10 +714,19 @@
     padding: 15px;
   ">
     CLICK IMAGE TO REQUEST ARC
-  </h3> <p> Status : Updating, BRB I'm currently at work and will be out 5pm PHT or 5am EST </p>
+  </h3>
 </div>
+
+<div class="status-wrap" id="statusWrap" style="display:none;">
+  <div class="status-banner">
+    <span id="statusMessage"></span>
+    <button class="status-close" id="statusClose" aria-label="Dismiss update">&times;</button>
+  </div>
+</div>
+
 <main>
   <div class="grid" id="grid"></div>
+  <div class="pagination" id="pagination"></div>
 </main>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -603,6 +736,10 @@
       <span class="modal-genre-tab" id="modalGenre"></span>
       <div class="modal-cover-frame">
         <img id="modalCover" src="" alt="">
+        <div class="cover-placeholder" id="modalCoverPlaceholder" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>
+          <span>Cover<br>Coming Soon</span>
+        </div>
       </div>
       <div class="modal-tropes" id="modalTropes"></div>
     </div>
@@ -622,6 +759,7 @@
     <!-- populated by script; edit the FOOTER_LINKS list below -->
   </div>
   <div class="footer-note">For The Love of Pages. Updated by hand, one ARC at a time.</div>
+  <div class="last-updated" id="lastUpdated"></div>
 </footer>
 
 <script>
@@ -654,6 +792,52 @@
     further down so the page still has something to display.
   */
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPbiaJvtyol6XVcK3xcac2_hAAxlJ3w796tAThz53CCXTDW5kHycW15YLT5B6wz8wIVk8iBDyZaVnG/pub?gid=0&single=true&output=csv";
+
+  /*
+    ================================================================
+    STATUS BANNER (optional)
+    ================================================================
+    Set this up as a second tab in your Google Sheet, headers:
+    Message | Active | Last Updated
+
+    - Message: the text you want shown in the banner
+    - Active: type Show to display it, Hide (or leave blank) to hide it
+    - Last Updated: a plain date you type yourself, e.g. "July 24, 2026"
+      Shown at the bottom of the site regardless of whether the
+      banner itself is Active or Hide.
+
+    Publish just that tab to web as CSV (same process as your books
+    tab), paste the link below. Leave the placeholder as is to skip
+    the banner entirely, nothing breaks either way.
+  */
+  const STATUS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPbiaJvtyol6XVcK3xcac2_hAAxlJ3w796tAThz53CCXTDW5kHycW15YLT5B6wz8wIVk8iBDyZaVnG/pub?gid=116387714&single=true&output=csv";
+
+  function loadStatus(){
+    const isConfigured = STATUS_CSV_URL && !STATUS_CSV_URL.startsWith('PASTE_YOUR');
+    if(!isConfigured) return;
+    Papa.parse(STATUS_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results){
+        const row = (results.data || [])[0] || {};
+        const message = (row['Message']||'').trim();
+        const active = (row['Active']||'').trim().toLowerCase();
+        const lastUpdated = (row['Last Updated']||'').trim();
+
+        if(message && active === 'show'){
+          document.getElementById('statusMessage').textContent = message;
+          document.getElementById('statusWrap').style.display = 'block';
+        }
+        if(lastUpdated){
+          document.getElementById('lastUpdated').textContent = 'Last updated: ' + lastUpdated;
+        }
+      },
+      error: function(err){
+        console.error('Could not load the status tab.', err);
+      }
+    });
+  }
 
   function splitList(value){
     if(!value) return [];
@@ -869,17 +1053,26 @@
     return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
   }
 
+  const COVER_PLACEHOLDER_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>`;
+
+  function coverContentHTML(book){
+    const placeholder = `<div class="cover-placeholder" style="${book.cover ? 'display:none;' : ''}">${COVER_PLACEHOLDER_ICON}<span>Cover<br>Coming Soon</span></div>`;
+    if(!book.cover) return placeholder;
+    const img = `<img src="${book.cover}" alt="Cover of ${book.title}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+    return img + placeholder;
+  }
+
   function renderCard(book, index){
     const primaryGenre = (book.genres && book.genres[0]) || 'Uncategorized';
     const tabColor = colorForGenre(primaryGenre);
-    const coverImg = `<img src="${book.cover || ''}" alt="Cover of ${book.title}" loading="lazy" onerror="this.style.display='none'">`;
+    const coverInner = coverContentHTML(book);
 
     const card = document.createElement('article');
     card.className = 'card';
     card.innerHTML = `
       <span class="genre-tab" style="background:${tabColor}">${primaryGenre}</span>
       <div class="cover-frame">
-        ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverImg}</a>` : coverImg}
+        ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
       </div>
       <div class="card-body">
         <p class="card-title">${book.title}</p>
@@ -891,6 +1084,9 @@
     `;
     return card;
   }
+
+  const PAGE_SIZE = 24;
+  let currentPage = 1;
 
   function applyFiltersAndRender(){
     const q = searchInput.value.trim().toLowerCase();
@@ -914,7 +1110,18 @@
       if(aIsAmazon !== bIsAmazon) return aIsAmazon ? 1 : -1;
       return a.title.localeCompare(b.title);
     });
+
     CURRENT_FILTERED = filtered;
+    currentPage = 1;
+    renderPage();
+  }
+
+  function renderPage(){
+    const filtered = CURRENT_FILTERED;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    if(currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
     grid.innerHTML = '';
     if(filtered.length === 0){
@@ -923,10 +1130,53 @@
       empty.textContent = 'No ARCs match those filters. Try clearing one.';
       grid.appendChild(empty);
     } else {
-      filtered.forEach((b, i)=> grid.appendChild(renderCard(b, i)));
+      pageItems.forEach((b, i)=> grid.appendChild(renderCard(b, start + i)));
     }
 
     catalogCount.textContent = `${filtered.length} of ${BOOKS.length} ARCs shown`;
+    renderPagination(totalPages);
+    grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderPagination(totalPages){
+    const pag = document.getElementById('pagination');
+    pag.innerHTML = '';
+    if(totalPages <= 1) return;
+
+    function makeBtn(label, page, opts){
+      opts = opts || {};
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (opts.active ? ' active' : '');
+      btn.textContent = label;
+      btn.disabled = !!opts.disabled;
+      if(!opts.active && !opts.disabled){
+        btn.addEventListener('click', ()=>{
+          currentPage = page;
+          renderPage();
+        });
+      }
+      return btn;
+    }
+
+    pag.appendChild(makeBtn('Prev', currentPage - 1, { disabled: currentPage === 1 }));
+
+    const pageNumbers = [];
+    for(let p=1; p<=totalPages; p++){
+      if(p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) pageNumbers.push(p);
+    }
+    let lastShown = 0;
+    pageNumbers.forEach(p=>{
+      if(p - lastShown > 1){
+        const dots = document.createElement('span');
+        dots.className = 'page-ellipsis';
+        dots.textContent = '...';
+        pag.appendChild(dots);
+      }
+      pag.appendChild(makeBtn(String(p), p, { active: p === currentPage }));
+      lastShown = p;
+    });
+
+    pag.appendChild(makeBtn('Next', currentPage + 1, { disabled: currentPage === totalPages }));
   }
 
   let CURRENT_FILTERED = [];
@@ -944,8 +1194,21 @@
     const primaryGenre = (book.genres && book.genres[0]) || 'Uncategorized';
     document.getElementById('modalGenre').textContent = primaryGenre;
     document.getElementById('modalGenre').style.background = colorForGenre(primaryGenre);
-    document.getElementById('modalCover').src = book.cover || '';
-    document.getElementById('modalCover').alt = 'Cover of ' + book.title;
+    const modalCoverImg = document.getElementById('modalCover');
+    const modalCoverPlaceholder = document.getElementById('modalCoverPlaceholder');
+    if(book.cover){
+      modalCoverImg.src = book.cover;
+      modalCoverImg.alt = 'Cover of ' + book.title;
+      modalCoverImg.style.display = '';
+      modalCoverPlaceholder.style.display = 'none';
+      modalCoverImg.onerror = function(){
+        modalCoverImg.style.display = 'none';
+        modalCoverPlaceholder.style.display = 'flex';
+      };
+    } else {
+      modalCoverImg.style.display = 'none';
+      modalCoverPlaceholder.style.display = 'flex';
+    }
     document.getElementById('modalTropes').innerHTML = (book.tropes||[])
       .map(t=>`<span class="trope-tag">${t}</span>`).join('');
     document.getElementById('modalTitle').textContent = book.title;
@@ -994,7 +1257,12 @@
     document.getElementById('noteWrap').style.display = 'none';
   });
 
+  document.getElementById('statusClose').addEventListener('click', function(){
+    document.getElementById('statusWrap').style.display = 'none';
+  });
+
   renderFooter();
+  loadStatus();
   catalogCount.textContent = 'Loading books...';
   loadBooks(function(books){
     BOOKS = books;
