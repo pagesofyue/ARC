@@ -344,12 +344,13 @@
 }
 .cover-wrap .ending-soon-badge{
   position:absolute;
-  bottom:clamp(8px, 4cqw, 14px);
+  bottom:clamp(0px, 1cqw, 4px);
   right:clamp(8px, 4cqw, 14px);
   margin:0;
   background:rgba(251,249,243,0.94);
   box-shadow:0 3px 8px rgba(28,37,65,0.3);
   z-index:3;
+}
 }
 .cover-frame {
   width: 100%;
@@ -398,6 +399,8 @@
     font-size:clamp(15px, 5.4cqw, 21px);
     line-height:1.25;
     margin:0;
+    white-space:nowrap;
+    overflow:hidden;
   }
   .card-author{
     font-size:clamp(12px, 4.2cqw, 16px);
@@ -405,12 +408,13 @@
     font-style:italic;
     margin:0 0 4px;
   }
-  .card-series{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:clamp(9px, 3cqw, 10.5px);
-    color:var(--ink-soft);
-    opacity:0.8;
-    margin:-3px 0 4px;
+ .card-series{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:clamp(9px, 3cqw, 10.5px);
+  color:var(--ink-soft);
+  opacity:0.8;
+  margin:-3px 0 4px;
+  min-height:1.3em;
   }
   .card-blurb{
     font-size:clamp(10px, 3.4cqw, 12.5px);
@@ -437,15 +441,16 @@
     padding:clamp(1.5px,0.6cqw,2px) clamp(5px,1.8cqw,8px);
   }
 
-  .card-platform{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:clamp(10.5px, 3.6cqw, 13px);
-    color:var(--ink);
-    opacity:0.75;
-    margin:6px 0 0;
-    padding-top:8px;
-    border-top:1px dashed var(--line);
-  }
+ .card-platform{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:clamp(10.5px, 3.6cqw, 13px);
+  color:var(--ink);
+  opacity:0.75;
+  margin:6px 0 0;
+  padding-top:8px;
+  border-top:1px dashed var(--line);
+  min-height:1.3em;
+}
   .ending-soon-badge{
     display:flex;
     flex-direction:column;
@@ -1154,7 +1159,16 @@
     const img = `<img src="${book.cover}" alt="Cover of ${book.title}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
     return img + placeholder;
   }
-
+function fitTitleToOneLine(el){
+  el.style.fontSize = '';
+  let fontSize = parseFloat(getComputedStyle(el).fontSize);
+  let guard = 0;
+  while(el.scrollWidth > el.clientWidth && fontSize > 9 && guard < 30){
+    fontSize -= 0.5;
+    el.style.fontSize = fontSize + 'px';
+    guard++;
+  }
+}
   function renderCard(book, index){
     const primaryGenre = (book.genres && book.genres[0]) || 'Uncategorized';
     const tabColor = colorForGenre(primaryGenre);
@@ -1173,7 +1187,7 @@
       <div class="card-body">
         <p class="card-title">${book.title}</p>
         <p class="card-author">${book.author}</p>
-        ${book.series ? `<p class="card-series">${book.series}</p>` : ''}
+        <p class="card-series">${book.series || ''}</p>
         <p class="card-platform">${book.platform || 'Not listed'}</p>
         <button class="details-btn" data-book-index="${index}">Details</button>
       </div>
@@ -1238,8 +1252,8 @@
       empty.textContent = 'No ARCs match those filters. Try clearing one.';
       grid.appendChild(empty);
     } else {
-      pageItems.forEach((b, i)=> grid.appendChild(renderCard(b, start + i)));
-    }
+pageItems.forEach((b, i)=> grid.appendChild(renderCard(b, start + i)));
+grid.querySelectorAll('.card-title').forEach(fitTitleToOneLine);    }
 
     catalogCount.textContent = `${filtered.length} of ${BOOKS.length} ARCs shown`;
     renderPagination(totalPages);
