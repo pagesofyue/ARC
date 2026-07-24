@@ -339,7 +339,17 @@
     white-space:nowrap;
   }
 .cover-wrap{
+  position:relative;
   padding: clamp(26px, 7cqw, 28px) clamp(12px, 4cqw, 18px) clamp(0px, 0cqw, 0px);
+}
+.cover-wrap .ending-soon-badge{
+  position:absolute;
+  top:clamp(8px, 4cqw, 14px);
+  right:clamp(8px, 4cqw, 14px);
+  margin:0;
+  background:rgba(251,249,243,0.94);
+  box-shadow:0 3px 8px rgba(28,37,65,0.3);
+  z-index:3;
 }
 .cover-frame {
   width: 100%;
@@ -1158,13 +1168,13 @@
         <div class="cover-frame">
           ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
         </div>
+        ${endingSoonBadgeHTML(book)}
       </div>
       <div class="card-body">
         <p class="card-title">${book.title}</p>
         <p class="card-author">${book.author}</p>
         ${book.series ? `<p class="card-series">${book.series}</p>` : ''}
         <p class="card-platform">${book.platform || 'Not listed'}</p>
-        ${endingSoonBadgeHTML(book)}
         <button class="details-btn" data-book-index="${index}">Details</button>
       </div>
     `;
