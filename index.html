@@ -552,6 +552,12 @@
       </select>
     </div>
     <div class="field">
+      <label for="authorSelect">Author</label>
+      <select id="authorSelect">
+        <option value="">All authors</option>
+      </select>
+    </div>
+    <div class="field">
       <label for="platformSelect">Platform</label>
       <select id="platformSelect">
         <option value="">All platforms</option>
@@ -802,6 +808,7 @@
   const grid = document.getElementById('grid');
   const searchInput = document.getElementById('searchInput');
   const genreSelect = document.getElementById('genreSelect');
+  const authorSelect = document.getElementById('authorSelect');
   const platformSelect = document.getElementById('platformSelect');
   const tropeSelect = document.getElementById('tropeSelect');
   const resetBtn = document.getElementById('resetBtn');
@@ -826,6 +833,13 @@
       const opt = document.createElement('option');
       opt.value = p; opt.textContent = p;
       platformSelect.appendChild(opt);
+    });
+
+    const allAuthors = uniqueSorted(BOOKS.map(b=>b.author).filter(Boolean));
+    allAuthors.forEach(a=>{
+      const opt = document.createElement('option');
+      opt.value = a; opt.textContent = a;
+      authorSelect.appendChild(opt);
     });
 
     const allTropes = uniqueSorted(BOOKS.flatMap(b=>b.tropes || []));
@@ -881,15 +895,17 @@
   function applyFiltersAndRender(){
     const q = searchInput.value.trim().toLowerCase();
     const genre = genreSelect.value;
+    const author = authorSelect.value;
     const platform = platformSelect.value;
     const trope = tropeSelect.value;
 
     let filtered = BOOKS.filter(b=>{
       const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
       const matchesGenre = !genre || (b.genres || []).includes(genre);
+      const matchesAuthor = !author || b.author === author;
       const matchesPlatform = !platform || b.platform === platform;
       const matchesTrope = !trope || (b.tropes || []).includes(trope);
-      return matchesQ && matchesGenre && matchesPlatform && matchesTrope;
+      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope;
     });
 
     filtered.sort((a,b)=>{
@@ -960,7 +976,7 @@
     if(e.key === 'Escape') closeDetails();
   });
 
-  [searchInput, genreSelect, platformSelect, tropeSelect].forEach(el=>{
+  [searchInput, genreSelect, authorSelect, platformSelect, tropeSelect].forEach(el=>{
     el.addEventListener('input', applyFiltersAndRender);
     el.addEventListener('change', applyFiltersAndRender);
   });
@@ -968,6 +984,7 @@
   resetBtn.addEventListener('click', ()=>{
     searchInput.value = '';
     genreSelect.value = '';
+    authorSelect.value = '';
     platformSelect.value = '';
     tropeSelect.value = '';
     applyFiltersAndRender();
