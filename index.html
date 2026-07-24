@@ -437,17 +437,40 @@
     border-top:1px dashed var(--line);
   }
   .ending-soon-badge{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:clamp(56px, 26cqw, 82px);
+    height:clamp(56px, 26cqw, 82px);
+    margin:8px auto 0;
+    border:2px dashed var(--stamp-red);
+    border-radius:50%;
+    transform:rotate(-7deg);
+    color:var(--stamp-red);
+    background:rgba(166,61,47,0.05);
     font-family:'IBM Plex Mono', monospace;
-    font-size:clamp(8.5px, 2.8cqw, 10.5px);
-    letter-spacing:0.03em;
     text-transform:uppercase;
     text-align:center;
-    color:#fff;
-    background:var(--stamp-red);
-    border-radius:20px;
-    padding:clamp(3px,1cqw,5px) clamp(6px,2cqw,10px);
-    margin-top:6px;
+    line-height:1.15;
+    padding:4px;
   }
+  .ending-soon-badge .label{
+    font-size:clamp(6px, 2.1cqw, 7.5px);
+    letter-spacing:0.05em;
+  }
+  .ending-soon-badge .days{
+    font-size:clamp(9px, 3.4cqw, 12.5px);
+    font-weight:700;
+    margin-top:2px;
+  }
+  .modal-right .ending-soon-badge{
+    width:80px;
+    height:80px;
+    align-self:center;
+  }
+  .modal-right .ending-soon-badge .label{ font-size:8px; }
+  .modal-right .ending-soon-badge .days{ font-size:12.5px; }
 
   .details-btn{
     margin-top:10px;
@@ -633,9 +656,8 @@
   font-size:clamp(9px, 2.3vw, 12.5px);
   letter-spacing:0.02em;
   text-align:center;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  white-space:normal;
+  line-height:1.5;
 }
   .status-close{
     position:absolute;
@@ -1110,8 +1132,8 @@
   function endingSoonBadgeHTML(book){
     const days = daysUntil(book.arcReleaseDate);
     if(days === null || days <= 0 || days > ENDING_SOON_THRESHOLD_DAYS) return '';
-    const dayLabel = days === 1 ? '1 day left to apply' : `${days} days left to apply`;
-    return `<div class="ending-soon-badge">Ending Soon &middot; ${dayLabel}</div>`;
+    const dayLabel = days === 1 ? '1 DAY LEFT' : `${days} DAYS LEFT`;
+    return `<div class="ending-soon-badge"><span class="label">Ending<br>Soon</span><span class="days">${dayLabel}</span></div>`;
   }
 
   const COVER_PLACEHOLDER_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>`;
@@ -1149,7 +1171,7 @@
     return card;
   }
 
-  const PAGE_SIZE = 60;
+  const PAGE_SIZE = 24;
   let currentPage = 1;
 
   function applyFiltersAndRender(){
@@ -1297,8 +1319,9 @@
     const endingSoonHTML = endingSoonBadgeHTML(book);
     if(endingSoonHTML){
       const days = daysUntil(book.arcReleaseDate);
-      modalEndingSoonEl.textContent = 'Ending Soon \u00b7 ' + (days === 1 ? '1 day left to apply' : `${days} days left to apply`);
-      modalEndingSoonEl.style.display = 'block';
+      const dayLabel = days === 1 ? '1 DAY LEFT' : `${days} DAYS LEFT`;
+      modalEndingSoonEl.innerHTML = `<span class="label">Ending<br>Soon</span><span class="days">${dayLabel}</span>`;
+      modalEndingSoonEl.style.display = 'flex';
     } else {
       modalEndingSoonEl.style.display = 'none';
     }
