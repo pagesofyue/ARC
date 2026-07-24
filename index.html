@@ -157,7 +157,7 @@
     transform:translateX(-50%) rotate(-3deg);
     width:18px; height:18px;
     border-radius:50%;
-    background:var(--stamp-red);
+    background: #5f3f5f;
     box-shadow:0 2px 3px rgba(0,0,0,0.25);
   }
   .pinned-note h2{
@@ -338,11 +338,11 @@
     white-space:nowrap;
   }
 .cover-wrap{
-  padding: clamp(20px, 7cqw, 30px) clamp(12px, 4cqw, 18px) clamp(8px, 3cqw, 14px);
+  padding: clamp(26px, 7cqw, 28px) clamp(12px, 4cqw, 18px) clamp(0px, 0cqw, 0px);
 }
 .cover-frame {
   width: 100%;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 2 / 3.3;
   background:var(--page-bg);
   border:1px solid var(--line);
   overflow:hidden;
@@ -362,7 +362,7 @@
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:6px;
+  gap:5px;
   background:
     repeating-linear-gradient(135deg, var(--page-bg), var(--page-bg) 10px, #E2DECE 10px, #E2DECE 20px);
   color:var(--ink-soft);
@@ -605,19 +605,22 @@
     margin:0 auto 10px;
     padding:0 24px;
   }
-  .status-banner{
-    position:relative;
-    background:#F4EDDD;
-    color:var(--ink);
-    border:1px solid var(--manila-dark);
-    border-left:4px solid var(--stamp-teal);
-    border-radius:var(--radius);
-    padding:11px 40px 11px 16px;
-    font-family:'IBM Plex Mono', monospace;
-    font-size:12.5px;
-    letter-spacing:0.02em;
-    text-align:center;
-  }
+.status-banner{
+  position:relative;
+  background:#F4EDDD;
+  color:var(--ink);
+  border:1px solid var(--manila-dark);
+  border-left:4px solid #bf7fbf;
+  border-radius:var(--radius);
+  padding:11px 40px 11px 16px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:clamp(9px, 2.3vw, 12.5px);
+  letter-spacing:0.02em;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
   .status-close{
     position:absolute;
     top:50%; right:10px;
@@ -650,7 +653,7 @@
 <header class="masthead">
   <div class="eyebrow">reader recommended &middot; indie focused</div>
   <h1 class="title">For The Love of Pages</h1>
- <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion">For The Love of Pages is a companion to my review site, pagesofyue.com.</span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
+ <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion">This is a companion to my review site, pagesofyue.com </span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
   <div class="catalog-count" id="catalogCount"></div>
 </header>
 
@@ -889,13 +892,12 @@
   }
 
   /*
-    ================================================================
-    SAMPLE BOOK DATA (fallback only)
-    ================================================================
-    This only shows up if SHEET_CSV_URL above hasn't been filled in
+    MANUAL BOOK DATA ENTRY
+   This only shows up if SHEET_CSV_URL above hasn't been filled in
     yet, or the sheet can't be reached. Once your Sheet is connected,
     this list is ignored entirely, you won't need to edit it.
   */
+
   const SAMPLE_BOOKS = [
     {
       title: "Just Between Us",
@@ -923,7 +925,7 @@
           {
       title: "Low Tide at Cape Merrow",
       author: "Junie Halvorsen",
-      cover: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?w=600&q=80",
+      cover: "https://m.media-amazon.com/images/I/519X4tlt6IL.SX316.SY480._SL500_.jpg",
       genres: ["Formula 1"],
       tropes: ["Slow burn", "Single parent"],
       platform: "BookSirens",
