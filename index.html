@@ -293,12 +293,12 @@
   .card-title{
     font-family:'Fraunces', serif;
     font-weight:600;
-    font-size:clamp(12.5px, 4.4cqw, 17px);
+    font-size:clamp(15px, 5.4cqw, 21px);
     line-height:1.25;
     margin:0;
   }
   .card-author{
-    font-size:clamp(10px, 3.4cqw, 13px);
+    font-size:clamp(12px, 4.2cqw, 16px);
     color:var(--ink-soft);
     font-style:italic;
     margin:0 0 4px;
@@ -337,7 +337,7 @@
 
   .card-platform{
     font-family:'IBM Plex Mono', monospace;
-    font-size:clamp(8.5px, 2.8cqw, 10.5px);
+    font-size:clamp(10.5px, 3.6cqw, 13px);
     color:var(--ink);
     opacity:0.75;
     margin:6px 0 0;
@@ -871,7 +871,6 @@
         <p class="card-title">${book.title}</p>
         <p class="card-author">${book.author}</p>
         ${book.series ? `<p class="card-series">${book.series}</p>` : ''}
-        ${(book.tropes && book.tropes.length) ? `<div class="trope-tags">${book.tropes.map(t=>`<span class="trope-tag">${t}</span>`).join('')}</div>` : ''}
         <p class="card-platform">${book.platform || 'Not listed'}</p>
         <button class="details-btn" data-book-index="${index}">Details</button>
       </div>
@@ -893,7 +892,12 @@
       return matchesQ && matchesGenre && matchesPlatform && matchesTrope;
     });
 
-    filtered.sort((a,b)=> a.title.localeCompare(b.title));
+    filtered.sort((a,b)=>{
+      const aIsAmazon = (a.platform||'').toLowerCase().includes('amazon');
+      const bIsAmazon = (b.platform||'').toLowerCase().includes('amazon');
+      if(aIsAmazon !== bIsAmazon) return aIsAmazon ? 1 : -1;
+      return a.title.localeCompare(b.title);
+    });
     CURRENT_FILTERED = filtered;
 
     grid.innerHTML = '';
@@ -980,70 +984,6 @@
     populateFilters();
     applyFiltersAndRender();
   });
-</script>
-
-<script>
-  function setupReadMoreToggles() {
-    // Finds common paragraph and blurb class targets automatically
-    const blurbs = document.querySelectorAll('.book-card p, .blurb, .book-blurb, p');
-
-    blurbs.forEach((el, index) => {
-      // Skips text blocks shorter than 450 characters or elements already processed
-      if (el.textContent.length < 450 || el.querySelector('.read-more-btn')) return;
-
-      const fullText = el.textContent.trim();
-      const visibleText = fullText.substring(0, 300);
-      const hiddenText = fullText.substring(300);
-
-      // Re-architects paragraph node to hold splitting text spans and a custom button
-      el.innerHTML = `
-        <span>${visibleText}</span><span id="dots-auto-${index}">...</span><span id="more-auto-${index}" style="display: none;">${hiddenText}</span>
-        <div style="margin-top: 10px;">
-          <button class="read-more-btn" id="btn-auto-${index}" style="
-            background-color: #483248;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            font-size: 13px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            display: inline-block;
-            transition: opacity 0.2s ease;
-          ">Read More</button>
-        </div>
-      `;
-
-      // Click Event Controller Activation
-      const btn = document.getElementById(`btn-auto-${index}`);
-      
-      // Simple hover effect
-      btn.addEventListener('mouseenter', () => btn.style.opacity = '0.9');
-      btn.addEventListener('mouseleave', () => btn.style.opacity = '1');
-      
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const dots = document.getElementById(`dots-auto-${index}`);
-        const moreText = document.getElementById(`more-auto-${index}`);
-
-        if (dots.style.display === "none") {
-          dots.style.display = "inline";
-          this.innerHTML = "Read More";
-          moreText.style.display = "none";
-        } else {
-          dots.style.display = "none";
-          this.innerHTML = "Read Less";
-          moreText.style.display = "inline";
-        }
-      });
-    });
-  }
-
-  // Lifecycle execution triggers
-  window.addEventListener('DOMContentLoaded', setupReadMoreToggles);
-  setInterval(setupReadMoreToggles, 1000);
 </script>
 
 
