@@ -96,11 +96,24 @@
     border:1px solid var(--ink);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
-    padding:26px 26px 22px;
+    padding:26px 44px 22px 26px;
     font-size:13.5px;
     line-height:1.65;
     color:var(--ink-soft);
   }
+  .note-close{
+    position:absolute;
+    top:14px; right:14px;
+    width:26px; height:26px;
+    border:1px solid var(--ink);
+    border-radius:50%;
+    background:var(--card-bg);
+    color:var(--ink);
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+  }
+  .note-close:hover{ background:var(--ink); color:var(--card-bg); }
   .pinned-note::before{
     content:"";
     position:absolute;
@@ -512,8 +525,9 @@
   <div class="catalog-count" id="catalogCount"></div>
 </header>
 
-<div class="note-wrap">
+<div class="note-wrap" id="noteWrap">
   <div class="pinned-note">
+    <button class="note-close" id="noteClose" aria-label="Hide this note">&times;</button>
     <h2>Before you browse</h2>
     <p><strong>For The Love of Pages</strong> is not affiliated with any authors, publishers, or PR teams whose books appear here. This is a personal catalog, not an official partnership. I do not charge for book features or receive payment for promoting books. Any support through Ko-fi is entirely voluntary and never required for a book to be featured.</p>
     <p>If you're an author or part of a PR team and would like your book featured or removed, please feel free to reach out. Everything here is shared in good faith, and I never want to overstep. My goal is simply to help connect readers with authors and their books. </p>
@@ -953,6 +967,10 @@
     platformSelect.value = '';
     tropeSelect.value = '';
     applyFiltersAndRender();
+  });
+
+  document.getElementById('noteClose').addEventListener('click', function(){
+    document.getElementById('noteWrap').style.display = 'none';
   });
 
   renderFooter();
