@@ -933,6 +933,7 @@
       platform: (row['Platform']||'').trim(),
       releaseDate: (row['Release Date']||'').trim(),
       arcReleaseDate: (row['ARC Release Date']||'').trim(),
+      dateAdded: (row['Date Added']||'').trim(),
       blurb: (row['Blurb']||'').trim(),
       amazonLink: (row['Book Link']||'').trim(),
       visibility: (row['Visibility']||'').trim().toLowerCase()
@@ -1227,6 +1228,13 @@ function fitTitleToOneLine(el){
       const bHasDate = !!bKey;
       if(aHasDate !== bHasDate) return aHasDate ? -1 : 1;
       if(aHasDate && bHasDate && aKey !== bKey) return aKey.localeCompare(bKey);
+
+      
+  // Tiebreaker: newest added first
+  const aAdded = a.dateAdded || '';
+  const bAdded = b.dateAdded || '';
+  if(aAdded !== bAdded) return bAdded.localeCompare(aAdded);
+
 
       return a.title.localeCompare(b.title);
     });
