@@ -190,10 +190,18 @@
     border-radius:8px;
     padding:18px 22px 20px;
     display:flex;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
+    overflow-x:auto;
     gap:16px 22px;
     align-items:flex-end;
     box-shadow:var(--shadow);
+  }
+  .controls-inner .field{
+    flex:0 0 auto;
+    min-width:130px;
+  }
+  .controls-inner .reset-btn{
+    flex:0 0 auto;
   }
   .field{
     display:flex;
@@ -657,6 +665,8 @@
   }
 .status-banner{
   position:relative;
+  width:100%;
+  min-width:0;
   background:#F4EDDD;
   color:var(--ink);
   border:1px solid var(--manila-dark);
@@ -664,12 +674,14 @@
   border-radius:var(--radius);
   padding:11px 40px 11px 16px;
   font-family:'IBM Plex Mono', monospace;
-  font-size:clamp(9px, 2.3vw, 12.5px);
   letter-spacing:0.02em;
   text-align:center;
+}
+.status-text{
+  display:block;
+  font-size:12.5px;
   white-space:nowrap;
   overflow:hidden;
-  text-overflow:ellipsis;
 }
   .status-close{
     position:absolute;
@@ -752,8 +764,12 @@
       </select>
     </div>
     <div class="field">
-      <label for="dateAddedFilter">Added Since</label>
-      <input type="date" id="dateAddedFilter">
+      <label for="dateAddedFrom">Added From</label>
+      <input type="date" id="dateAddedFrom">
+    </div>
+    <div class="field">
+      <label for="dateAddedTo">Added To</label>
+      <input type="date" id="dateAddedTo">
     </div>
     <button class="reset-btn" id="resetBtn">Clear filters</button>
   </div>
@@ -779,12 +795,7 @@
   </h3>
 </div>
 
-<div class="status-wrap" id="statusWrap" style="display:none;">
-  <div class="status-banner">
-    <span id="statusMessage"></span>
-    <button class="status-close" id="statusClose" aria-label="Dismiss update">&times;</button>
-  </div>
-</div>
+<div class="status-wrap" id="statusWrap" style="display:none;"></div>
 
 <main>
   <div class="grid" id="grid"></div>
@@ -883,15 +894,38 @@
       header: true,
       skipEmptyLines: true,
       complete: function(results){
-        const row = (results.data || [])[0] || {};
-        const message = (row['Message']||'').trim();
-        const active = (row['Active']||'').trim().toLowerCase();
-        const lastUpdated = (row['Last Updated']||'').trim();
+        const rows = results.data || [];
+        const statusWrap = document.getElementById('statusWrap');
+        statusWrap.innerHTML = '';
 
-        if(message && active === 'show'){
-          document.getElementById('statusMessage').textContent = message;
-          document.getElementById('statusWrap').style.display = 'block';
-        }
+        let anyShown = false;
+        let lastUpdated = '';
+        const textEls = [];
+
+        rows.forEach(row=>{
+          const message = (row['Message']||'').trim();
+          const active = (row['Active']||'').trim().toLowerCase();
+          const rowLastUpdated = (row['Last Updated']||'').trim();
+          if(rowLastUpdated && !lastUpdated) lastUpdated = rowLastUpdated;
+
+          if(message && active === 'show'){
+            anyShown = true;
+            const banner = document.createElement('div');
+            banner.className = 'status-banner';
+            banner.innerHTML = `<span class="status-text"></span><button class="status-close" aria-label="Dismiss update">&times;</button>`;
+            const textEl = banner.querySelector('.status-text');
+            textEl.textContent = message;
+            banner.querySelector('.status-close').addEventListener('click', function(){
+              banner.remove();
+              if(!statusWrap.querySelector('.status-banner')) statusWrap.style.display = 'none';
+            });
+            statusWrap.appendChild(banner);
+            textEls.push(textEl);
+          }
+        });
+
+        statusWrap.style.display = anyShown ? 'flex' : 'none';
+        textEls.forEach(el=>fitTextToOneLine(el));
         if(lastUpdated){
           document.getElementById('lastUpdated').textContent = 'Last updated: ' + lastUpdated;
         }
@@ -1019,6 +1053,41 @@
 
   /*
     ================================================================
+    TROPE ALIASES (merging near-duplicate tropes)
+    ================================================================
+    Tropes are free text, so small wording differences ("Morally
+    Gray Character" vs "Morally Gray Characters") show up as separate
+    filter options even though they mean the same thing.
+
+    Two layers handle this automatically:
+    1. Exact duplicates that only differ by CAPITALIZATION merge on
+       their own, no setup needed.
+    2. Genuinely different wording needs a manual alias below: the
+       key is what's typed in your sheet (lowercase), the value is
+       the version you want shown on the site. Add as many as you like.
+  */
+  const TROPE_ALIASES = {
+    "morally gray character": "Morally Gray Characters",
+    "slow-burn": "Slow Burn",
+    "found family trope": "Found Family"
+  };
+
+  function normalizeTropesAcrossBooks(books){
+    const seen = {};
+    books.forEach(b=>{
+      b.tropes = (b.tropes || []).map(raw=>{
+        const clean = raw.trim().replace(/\s+/g, ' ');
+        const key = clean.toLowerCase();
+        const aliasTarget = TROPE_ALIASES[key];
+        const finalKey = (aliasTarget || clean).toLowerCase();
+        if(!seen[finalKey]) seen[finalKey] = aliasTarget || clean;
+        return seen[finalKey];
+      });
+    });
+  }
+
+  /*
+    ================================================================
     GENRE COLORS
     ================================================================
     Set a specific color for any genre here, using its exact name
@@ -1058,7 +1127,8 @@
   const authorSelect = document.getElementById('authorSelect');
   const platformSelect = document.getElementById('platformSelect');
   const tropeSelect = document.getElementById('tropeSelect');
-  const dateAddedFilter = document.getElementById('dateAddedFilter');
+  const dateAddedFrom = document.getElementById('dateAddedFrom');
+  const dateAddedTo = document.getElementById('dateAddedTo');
   const resetBtn = document.getElementById('resetBtn');
   const catalogCount = document.getElementById('catalogCount');
   const footerLinksEl = document.getElementById('footerLinks');
@@ -1147,6 +1217,18 @@
     }
   }
 
+  function fitTextToOneLine(el, minSize){
+    minSize = minSize || 7;
+    el.style.fontSize = '';
+    let fontSize = parseFloat(getComputedStyle(el).fontSize);
+    let guard = 0;
+    while(el.scrollWidth > el.clientWidth && fontSize > minSize && guard < 40){
+      fontSize -= 0.3;
+      el.style.fontSize = fontSize + 'px';
+      guard++;
+    }
+  }
+
   const COVER_PLACEHOLDER_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>`;
 
   function coverContentHTML(book){
@@ -1191,7 +1273,8 @@
     const author = authorSelect.value;
     const platform = platformSelect.value;
     const trope = tropeSelect.value;
-    const addedSince = dateAddedFilter.value;
+    const addedFrom = dateAddedFrom.value;
+    const addedTo = dateAddedTo.value;
 
     let filtered = BOOKS.filter(b=>{
       const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
@@ -1199,8 +1282,9 @@
       const matchesAuthor = !author || b.author === author;
       const matchesPlatform = !platform || b.platform === platform;
       const matchesTrope = !trope || (b.tropes || []).includes(trope);
-      const matchesDateAdded = !addedSince || (b.dateAdded && b.dateAdded >= addedSince);
-      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesDateAdded;
+      const matchesDateFrom = !addedFrom || (b.dateAdded && b.dateAdded >= addedFrom);
+      const matchesDateTo = !addedTo || (b.dateAdded && b.dateAdded <= addedTo);
+      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesDateFrom && matchesDateTo;
     });
 
     function effectiveDateKey(b){
@@ -1366,7 +1450,7 @@
     if(e.key === 'Escape') closeDetails();
   });
 
-  [searchInput, genreSelect, authorSelect, platformSelect, tropeSelect, dateAddedFilter].forEach(el=>{
+  [searchInput, genreSelect, authorSelect, platformSelect, tropeSelect, dateAddedFrom, dateAddedTo].forEach(el=>{
     el.addEventListener('input', applyFiltersAndRender);
     el.addEventListener('change', applyFiltersAndRender);
   });
@@ -1377,7 +1461,8 @@
     authorSelect.value = '';
     platformSelect.value = '';
     tropeSelect.value = '';
-    dateAddedFilter.value = '';
+    dateAddedFrom.value = '';
+    dateAddedTo.value = '';
     applyFiltersAndRender();
   });
 
@@ -1385,8 +1470,13 @@
     document.getElementById('noteWrap').style.display = 'none';
   });
 
-  document.getElementById('statusClose').addEventListener('click', function(){
-    document.getElementById('statusWrap').style.display = 'none';
+  let resizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      document.querySelectorAll('.card-title').forEach(fitTitleToOneLine);
+      document.querySelectorAll('.status-text').forEach(el=>fitTextToOneLine(el));
+    }, 150);
   });
 
   renderFooter();
@@ -1394,6 +1484,7 @@
   catalogCount.textContent = 'Loading books...';
   loadBooks(function(books){
     BOOKS = books;
+    normalizeTropesAcrossBooks(BOOKS);
     populateFilters();
     applyFiltersAndRender();
   });
