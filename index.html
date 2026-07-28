@@ -224,24 +224,6 @@
     outline:2px solid var(--stamp-red);
     outline-offset:1px;
   }
-  .date-range-group{
-    display:flex;
-    align-items:center;
-    gap:6px;
-  }
-  .date-range-group input[type="date"]{
-    flex:1 1 0;
-    min-width:0;
-    font-size:12px;
-    padding:9px 4px;
-  }
-  .date-range-sep{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:10.5px;
-    color:var(--ink);
-    opacity:0.6;
-    flex:0 0 auto;
-  }
   .reset-btn{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
@@ -778,12 +760,10 @@
       </select>
     </div>
     <div class="field">
-      <label for="dateAddedFrom">Date Added</label>
-      <div class="date-range-group">
-        <input type="date" id="dateAddedFrom" aria-label="From date">
-        <span class="date-range-sep">to</span>
-        <input type="date" id="dateAddedTo" aria-label="To date">
-      </div>
+      <label for="batchSelect">Batch No</label>
+      <select id="batchSelect">
+        <option value="">All batches</option>
+      </select>
     </div>
     <button class="reset-btn" id="resetBtn">Clear filters</button>
   </div>
@@ -823,10 +803,6 @@
       <span class="modal-genre-tab" id="modalGenre"></span>
       <div class="modal-cover-frame">
         <img id="modalCover" src="" alt="">
-        <div class="cover-placeholder" id="modalCoverPlaceholder" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>
-          <span>Cover<br>Coming Soon</span>
-        </div>
       </div>
       <div class="modal-tropes" id="modalTropes"></div>
     </div>
@@ -875,6 +851,10 @@
       (Amazon, a request form, an author page, anything)
     - Visibility: type Hide on any row to pull that book off the
       site without deleting it. Leave blank or type Show otherwise.
+    - Batch No: whatever code or number you personally use to track
+      when a book was added. Any format works, plain numbers, your
+      own custom codes, anything. It's purely for your own reference
+      and filtering, it never affects the order books are displayed in.
 
     Until this is filled in, the site uses the SAMPLE_BOOKS list
     further down so the page still has something to display.
@@ -966,7 +946,7 @@
       platform: (row['Platform']||'').trim(),
       releaseDate: (row['Release Date']||'').trim(),
       arcReleaseDate: (row['ARC Release Date']||'').trim(),
-      dateAdded: (row['Date Added']||'').trim(),
+      batchNo: (row['Batch No']||'').trim(),
       blurb: (row['Blurb']||'').trim(),
       amazonLink: (row['Book Link']||'').trim(),
       visibility: (row['Visibility']||'').trim().toLowerCase()
@@ -1149,8 +1129,7 @@
   const authorSelect = document.getElementById('authorSelect');
   const platformSelect = document.getElementById('platformSelect');
   const tropeSelect = document.getElementById('tropeSelect');
-  const dateAddedFrom = document.getElementById('dateAddedFrom');
-  const dateAddedTo = document.getElementById('dateAddedTo');
+  const batchSelect = document.getElementById('batchSelect');
   const resetBtn = document.getElementById('resetBtn');
   const catalogCount = document.getElementById('catalogCount');
   const footerLinksEl = document.getElementById('footerLinks');
@@ -1187,6 +1166,14 @@
       const opt = document.createElement('option');
       opt.value = t; opt.textContent = t;
       tropeSelect.appendChild(opt);
+    });
+
+    const allBatches = [...new Set(BOOKS.map(b=>b.batchNo).filter(Boolean))]
+      .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
+    allBatches.forEach(bNo=>{
+      const opt = document.createElement('option');
+      opt.value = bNo; opt.textContent = bNo;
+      batchSelect.appendChild(opt);
     });
   }
 
@@ -1251,13 +1238,16 @@
     }
   }
 
-  const COVER_PLACEHOLDER_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h11a2 2 0 0 1 2 2v14l-7-3-7 3V6a2 2 0 0 1 1-2z"/></svg>`;
+  /*
+    Shown whenever a book has no Cover URL, or its Cover URL fails
+    to load. Swap this link for a different image anytime, just
+    replace the URL inside the quotes.
+  */
+  const DEFAULT_COVER_URL = "https://i.pinimg.com/736x/97/c5/f3/97c5f3d81bc6dc45b6543174aaef8284.jpg";
 
   function coverContentHTML(book){
-    const placeholder = `<div class="cover-placeholder" style="${book.cover ? 'display:none;' : ''}">${COVER_PLACEHOLDER_ICON}<span>Cover<br>Coming Soon</span></div>`;
-    if(!book.cover) return placeholder;
-    const img = `<img src="${book.cover}" alt="Cover of ${book.title}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
-    return img + placeholder;
+    const src = book.cover || DEFAULT_COVER_URL;
+    return `<img src="${src}" alt="Cover of ${book.title}" loading="lazy" onerror="this.onerror=null; this.src='${DEFAULT_COVER_URL}';">`;
   }
 
   function renderCard(book, index){
@@ -1295,8 +1285,7 @@
     const author = authorSelect.value;
     const platform = platformSelect.value;
     const trope = tropeSelect.value;
-    const addedFrom = dateAddedFrom.value;
-    const addedTo = dateAddedTo.value;
+    const batch = batchSelect.value;
 
     let filtered = BOOKS.filter(b=>{
       const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
@@ -1304,9 +1293,8 @@
       const matchesAuthor = !author || b.author === author;
       const matchesPlatform = !platform || b.platform === platform;
       const matchesTrope = !trope || (b.tropes || []).includes(trope);
-      const matchesDateFrom = !addedFrom || (b.dateAdded && b.dateAdded >= addedFrom);
-      const matchesDateTo = !addedTo || (b.dateAdded && b.dateAdded <= addedTo);
-      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesDateFrom && matchesDateTo;
+      const matchesBatch = !batch || b.batchNo === batch;
+      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesBatch;
     });
 
     function effectiveDateKey(b){
@@ -1324,10 +1312,6 @@
       const bHasDate = !!bKey;
       if(aHasDate !== bHasDate) return aHasDate ? -1 : 1;
       if(aHasDate && bHasDate && aKey !== bKey) return aKey.localeCompare(bKey);
-
-      const aAdded = a.dateAdded || '';
-      const bAdded = b.dateAdded || '';
-      if(aAdded !== bAdded) return bAdded.localeCompare(aAdded);
 
       return a.title.localeCompare(b.title);
     });
@@ -1417,20 +1401,13 @@
     document.getElementById('modalGenre').textContent = primaryGenre;
     document.getElementById('modalGenre').style.background = colorForGenre(primaryGenre);
     const modalCoverImg = document.getElementById('modalCover');
-    const modalCoverPlaceholder = document.getElementById('modalCoverPlaceholder');
-    if(book.cover){
-      modalCoverImg.src = book.cover;
-      modalCoverImg.alt = 'Cover of ' + book.title;
-      modalCoverImg.style.display = '';
-      modalCoverPlaceholder.style.display = 'none';
-      modalCoverImg.onerror = function(){
-        modalCoverImg.style.display = 'none';
-        modalCoverPlaceholder.style.display = 'flex';
-      };
-    } else {
-      modalCoverImg.style.display = 'none';
-      modalCoverPlaceholder.style.display = 'flex';
-    }
+    modalCoverImg.style.display = '';
+    modalCoverImg.alt = 'Cover of ' + book.title;
+    modalCoverImg.onerror = function(){
+      modalCoverImg.onerror = null;
+      modalCoverImg.src = DEFAULT_COVER_URL;
+    };
+    modalCoverImg.src = book.cover || DEFAULT_COVER_URL;
     document.getElementById('modalTropes').innerHTML = (book.tropes||[])
       .map(t=>`<span class="trope-tag">${t}</span>`).join('');
     document.getElementById('modalTitle').textContent = book.title;
@@ -1472,7 +1449,7 @@
     if(e.key === 'Escape') closeDetails();
   });
 
-  [searchInput, genreSelect, authorSelect, platformSelect, tropeSelect, dateAddedFrom, dateAddedTo].forEach(el=>{
+  [searchInput, genreSelect, authorSelect, platformSelect, tropeSelect, batchSelect].forEach(el=>{
     el.addEventListener('input', applyFiltersAndRender);
     el.addEventListener('change', applyFiltersAndRender);
   });
@@ -1483,8 +1460,7 @@
     authorSelect.value = '';
     platformSelect.value = '';
     tropeSelect.value = '';
-    dateAddedFrom.value = '';
-    dateAddedTo.value = '';
+    batchSelect.value = '';
     applyFiltersAndRender();
   });
 
