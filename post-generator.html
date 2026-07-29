@@ -176,12 +176,18 @@
 
   let BOOKS = [];
 
+  function getField(row, name){
+    const targetKey = name.trim().toLowerCase();
+    const actualKey = Object.keys(row).find(k => k.trim().toLowerCase() === targetKey);
+    return actualKey ? (row[actualKey] || '').trim() : '';
+  }
+
   function rowToBook(row){
     return {
-      title: (row['Title']||'').trim(),
-      socialMedia: (row['Social Media']||'').trim(),
-      batchNo: (row['Batch No']||'').trim(),
-      visibility: (row['Visibility']||'').trim().toLowerCase()
+      title: getField(row, 'Title'),
+      socialMedia: getField(row, 'Social Media'),
+      batchNo: getField(row, 'Batch No'),
+      visibility: getField(row, 'Visibility').toLowerCase()
     };
   }
 

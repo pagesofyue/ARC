@@ -969,22 +969,28 @@
     return value.split(',').map(s=>s.trim()).filter(Boolean);
   }
 
+  function getField(row, name){
+    const targetKey = name.trim().toLowerCase();
+    const actualKey = Object.keys(row).find(k => k.trim().toLowerCase() === targetKey);
+    return actualKey ? (row[actualKey] || '').trim() : '';
+  }
+
   function rowToBook(row){
     return {
-      title: (row['Title']||'').trim(),
-      author: (row['Author']||'').trim(),
-      socialMedia: (row['Social Media']||'').trim(),
-      series: (row['Series']||'').trim(),
-      cover: (row['Cover URL']||'').trim(),
-      genres: splitList(row['Genre']),
-      tropes: splitList(row['Tropes']),
-      platform: (row['Platform']||'').trim(),
-      releaseDate: (row['Release Date']||'').trim(),
-      arcReleaseDate: (row['ARC Release Date']||'').trim(),
-      batchNo: (row['Batch No']||'').trim(),
-      blurb: (row['Blurb']||'').trim(),
-      amazonLink: (row['Book Link']||'').trim(),
-      visibility: (row['Visibility']||'').trim().toLowerCase()
+      title: getField(row, 'Title'),
+      author: getField(row, 'Author'),
+      socialMedia: getField(row, 'Social Media'),
+      series: getField(row, 'Series'),
+      cover: getField(row, 'Cover URL'),
+      genres: splitList(getField(row, 'Genre')),
+      tropes: splitList(getField(row, 'Tropes')),
+      platform: getField(row, 'Platform'),
+      releaseDate: getField(row, 'Release Date'),
+      arcReleaseDate: getField(row, 'ARC Release Date'),
+      batchNo: getField(row, 'Batch No'),
+      blurb: getField(row, 'Blurb'),
+      amazonLink: getField(row, 'Book Link'),
+      visibility: getField(row, 'Visibility').toLowerCase()
     };
   }
 
