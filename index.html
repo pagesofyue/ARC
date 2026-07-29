@@ -590,6 +590,17 @@
     font-style:italic;
     margin:0;
   }
+  .modal-social{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    margin:2px 0 0;
+  }
+  .modal-social a{
+    color:var(--stamp-teal);
+    text-decoration:none;
+    border-bottom:1px solid var(--stamp-teal);
+  }
+  .modal-social a:hover{ color:var(--stamp-red); border-color:var(--stamp-red); }
   .modal-stamp-strip{
     border-top:1px dashed var(--line);
     border-bottom:1px dashed var(--line);
@@ -650,7 +661,25 @@
     margin:22px auto 0;
     padding:0 24px;
     text-align:center;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
   }
+  .suggest-book-btn{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    text-decoration:none;
+    color:var(--ink);
+    border:1px solid var(--ink);
+    border-radius:20px;
+    padding:9px 16px;
+  }
+  .suggest-book-btn:hover{ background:var(--ink); color:var(--card-bg); }
   .status-wrap{
     max-width:760px;
     margin:0 auto 10px;
@@ -772,6 +801,7 @@
 <div class="kofi-section">
   <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
   <script type='text/javascript'>kofiwidget2.init('Support me on Ko-fi', '#7a2c69', 'W4Y820FD7J');kofiwidget2.draw();</script>
+  <a class="suggest-book-btn" href="https://forms.gle/41sHhvt5EJpdEVWWA" target="_blank" rel="noopener noreferrer">Suggest a Book</a>
 </div>
 
 <div style="text-align: center;">
@@ -810,6 +840,7 @@
       <p class="modal-title" id="modalTitle"></p>
       <p class="modal-series" id="modalSeries"></p>
       <p class="modal-author" id="modalAuthor"></p>
+      <p class="modal-social" id="modalSocial"></p>
       <div class="ending-soon-badge" id="modalEndingSoon" style="display:none;"></div>
       <dl class="modal-stamp-strip" id="modalStampStrip"></dl>
       <p class="modal-blurb" id="modalBlurb"></p>
@@ -855,6 +886,9 @@
       when a book was added. Any format works, plain numbers, your
       own custom codes, anything. It's purely for your own reference
       and filtering, it never affects the order books are displayed in.
+    - Social Media: the author's handle or profile link, e.g.
+      @theirhandle or a full URL. Shown in Details only, right under
+      Author. Leave blank to hide it for that book.
 
     Until this is filled in, the site uses the SAMPLE_BOOKS list
     further down so the page still has something to display.
@@ -939,6 +973,7 @@
     return {
       title: (row['Title']||'').trim(),
       author: (row['Author']||'').trim(),
+      socialMedia: (row['Social Media']||'').trim(),
       series: (row['Series']||'').trim(),
       cover: (row['Cover URL']||'').trim(),
       genres: splitList(row['Genre']),
@@ -1414,6 +1449,26 @@
     document.getElementById('modalSeries').textContent = book.series || '';
     document.getElementById('modalSeries').style.display = book.series ? '' : 'none';
     document.getElementById('modalAuthor').textContent = book.author;
+
+    const socialEl = document.getElementById('modalSocial');
+    const social = (book.socialMedia || '').trim();
+    if(social){
+      let href, label;
+      if(/^https?:\/\//i.test(social)){
+        href = social;
+        label = social.replace(/^https?:\/\/(www\.)?/i, '');
+      } else if(social.startsWith('@')){
+        href = 'https://www.threads.com/' + social;
+        label = social;
+      } else {
+        href = 'https://www.threads.com/@' + social.replace(/^@/, '');
+        label = '@' + social.replace(/^@/, '');
+      }
+      socialEl.innerHTML = `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      socialEl.style.display = '';
+    } else {
+      socialEl.style.display = 'none';
+    }
     document.getElementById('modalBlurb').textContent = book.blurb || '';
 
     const modalEndingSoonEl = document.getElementById('modalEndingSoon');
