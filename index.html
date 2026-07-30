@@ -179,6 +179,43 @@
   }
 
   /* Controls */
+  .tab-bar{
+    max-width:1100px;
+    margin:28px auto 0;
+    padding:0 24px;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+  }
+  .tab-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    color:var(--ink);
+    border:1px solid var(--ink);
+    border-bottom:none;
+    cursor:pointer;
+    padding:16px 26px 12px;
+    margin-right:-16px;
+    clip-path: polygon(14% 0%, 86% 0%, 100% 100%, 0% 100%);
+    position:relative;
+    opacity:0.82;
+    transform:translateY(4px);
+    transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  .tab-btn:last-child{ margin-right:0; }
+  .tab-btn[data-tab="arc"]{ background:#E4CBE4; }
+  .tab-btn[data-tab="released"]{ background:#C2E3DC; }
+  .tab-btn[data-tab="all"]{ background:var(--manila); }
+  .tab-btn:hover{ filter:brightness(0.96); }
+  .tab-btn.active{
+    z-index:10;
+    opacity:1;
+    transform:translateY(0);
+    font-weight:700;
+    padding-top:18px;
+  }
   .controls{
     max-width:1100px;
     margin:32px auto 0;
@@ -242,8 +279,9 @@
   /* Grid */
   main{
     max-width:1400px;
-    margin:36px auto 60px;
-    padding:0 24px;
+    margin:0 auto 60px;
+    padding:24px 24px 0;
+    border-top:2px solid var(--ink);
   }
   .grid{
     display:grid;
@@ -477,7 +515,51 @@
   }
   .modal-right .ending-soon-badge .label{ font-size:8px; }
   .modal-right .ending-soon-badge .days{ font-size:12.5px; }
+  .modal-right .released-badge{
+    width:80px;
+    height:80px;
+    align-self:center;
+  }
+  .modal-right .released-badge .label{ font-size:8px; }
+  .modal-right .released-badge .days{ font-size:12.5px; }
   .cover-wrap .ending-soon-badge{
+    position:absolute;
+    bottom:clamp(6px, 3cqw, 12px);
+    right:clamp(7px, 3cqw, 12px);
+    margin:0;
+    background:rgba(251,249,243,0.94);
+    box-shadow:0 3px 8px rgba(28,37,65,0.3);
+    z-index:3;
+  }
+  .released-badge{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    width:clamp(56px, 26cqw, 82px);
+    height:clamp(56px, 26cqw, 82px);
+    margin:8px auto 0;
+    border:2px dashed var(--stamp-teal);
+    border-radius:50%;
+    transform:rotate(-7deg);
+    color:var(--stamp-teal);
+    background:rgba(53,99,90,0.05);
+    font-family:'IBM Plex Mono', monospace;
+    text-transform:uppercase;
+    text-align:center;
+    line-height:1.15;
+    padding:4px;
+  }
+  .released-badge .label{
+    font-size:clamp(6px, 2.1cqw, 7.5px);
+    letter-spacing:0.05em;
+  }
+  .released-badge .days{
+    font-size:clamp(9px, 3.4cqw, 12.5px);
+    font-weight:700;
+    margin-top:2px;
+  }
+  .cover-wrap .released-badge{
     position:absolute;
     bottom:clamp(6px, 3cqw, 12px);
     right:clamp(7px, 3cqw, 12px);
@@ -821,6 +903,12 @@
 
 <div class="status-wrap" id="statusWrap" style="display:none;"></div>
 
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-tab="arc">ARC Sign-Ups</button>
+  <button class="tab-btn" data-tab="released">Now Available</button>
+  <button class="tab-btn" data-tab="all">All Books</button>
+</div>
+
 <main>
   <div class="grid" id="grid"></div>
   <div class="pagination" id="pagination"></div>
@@ -842,6 +930,7 @@
       <p class="modal-author" id="modalAuthor"></p>
       <p class="modal-social" id="modalSocial"></p>
       <div class="ending-soon-badge" id="modalEndingSoon" style="display:none;"></div>
+      <div class="released-badge" id="modalReleased" style="display:none;"></div>
       <dl class="modal-stamp-strip" id="modalStampStrip"></dl>
       <p class="modal-blurb" id="modalBlurb"></p>
       <p class="modal-request-note">Interested? Click the book cover on the homepage to request or buy a copy.</p>
@@ -1249,11 +1338,27 @@
     return Math.ceil(diffMs / 86400000);
   }
 
+  function isReleased(book){
+    if((book.platform||'').toLowerCase().includes('amazon')) return true;
+    if(!book.releaseDate) return false;
+    const releaseDay = new Date(book.releaseDate + 'T00:00:00');
+    if(isNaN(releaseDay)) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return releaseDay <= today;
+  }
+
   function endingSoonBadgeHTML(book){
+    if(isReleased(book)) return '';
     const days = daysUntil(book.arcReleaseDate);
     if(days === null || days <= 0 || days > ENDING_SOON_THRESHOLD_DAYS) return '';
     const dayLabel = days === 1 ? '1 DAY LEFT' : `${days} DAYS LEFT`;
     return `<div class="ending-soon-badge"><span class="label">Ending<br>Soon</span><span class="days">${dayLabel}</span></div>`;
+  }
+
+  function releasedBadgeHTML(book){
+    if(!isReleased(book)) return '';
+    return `<div class="released-badge"><span class="label">Now</span><span class="days">Available</span></div>`;
   }
 
   function fitTitleToOneLine(el){
@@ -1305,6 +1410,7 @@
           ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
         </div>
         ${endingSoonBadgeHTML(book)}
+        ${releasedBadgeHTML(book)}
       </div>
       <div class="card-body">
         <p class="card-title">${book.title}</p>
@@ -1319,6 +1425,8 @@
 
   const PAGE_SIZE = 60;
   let currentPage = 1;
+
+  let currentTab = 'arc';
 
   function applyFiltersAndRender(){
     const q = searchInput.value.trim().toLowerCase();
@@ -1335,7 +1443,10 @@
       const matchesPlatform = !platform || b.platform === platform;
       const matchesTrope = !trope || (b.tropes || []).includes(trope);
       const matchesBatch = !batch || b.batchNo === batch;
-      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesBatch;
+      const matchesTab = currentTab === 'all'
+        || (currentTab === 'arc' && !isReleased(b))
+        || (currentTab === 'released' && isReleased(b));
+      return matchesQ && matchesGenre && matchesAuthor && matchesPlatform && matchesTrope && matchesBatch && matchesTab;
     });
 
     function effectiveDateKey(b){
@@ -1488,6 +1599,14 @@
       modalEndingSoonEl.style.display = 'none';
     }
 
+    const modalReleasedEl = document.getElementById('modalReleased');
+    if(isReleased(book)){
+      modalReleasedEl.innerHTML = `<span class="label">Now</span><span class="days">Available</span>`;
+      modalReleasedEl.style.display = 'flex';
+    } else {
+      modalReleasedEl.style.display = 'none';
+    }
+
     let stampRows = `<dt>Platform</dt><dd>${book.platform || 'Not listed'}</dd>`;
     stampRows += `<dt>Release Date</dt><dd>${formatDate(book.releaseDate)}</dd>`;
     if(book.arcReleaseDate){
@@ -1536,6 +1655,15 @@
       document.querySelectorAll('.card-title').forEach(fitTitleToOneLine);
       document.querySelectorAll('.status-text').forEach(el=>fitTextToOneLine(el));
     }, 150);
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      applyFiltersAndRender();
+    });
   });
 
   renderFooter();
