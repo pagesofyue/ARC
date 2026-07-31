@@ -834,6 +834,16 @@
     color:var(--ink-soft);
     font-family:'IBM Plex Mono', monospace;
   }
+    #tabBar {
+      display: flex !important;
+      gap: 2px; 
+      align-items: flex-end; 
+    }
+    #tabBar .tab-btn {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+      position: relative; 
+    }
 </style>
 </head>
 <body>
@@ -841,8 +851,14 @@
 <header class="masthead">
   <div class="eyebrow">reader recommended &middot; indie focused</div>
   <h1 class="title">For The Love of Pages</h1>
- <p class="subtitle" style="font-size: 88%;"><span class="subtitle-companion"><i>This is a companion to my review site, pagesofyue.com </i> </span><br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.</p>
-  <div class="catalog-count" id="catalogCount"></div>
+<p class="subtitle" style="font-size: 88%;">
+  <span class="subtitle-companion">
+    <i>This is a companion to my review site, 
+      <a href="https://pagesofyue.com" target="_blank" rel="noopener" class="companion-link">pagesofyue.com</a>
+    </i> 
+  </span>
+  <br>A catalog of ARCs by indie authors, organized by genre, platform, and tropes.
+</p>  <div class="catalog-count" id="catalogCount"></div>
 </header>
 
 <div class="note-flank-wrap">
@@ -909,7 +925,7 @@
 </div>
 
 <div style="text-align: center;">
-  <h3 style="
+  <h6 style="
     display: inline-block;
     text-align: center;
     font-family: 'Arial', sans-serif;
@@ -917,13 +933,16 @@
     color: #702963;
     border: 2px dashed #702963;
     border-radius: 10px;
-    padding: 15px;
+    padding: 10px;
   ">
     CLICK IMAGE TO REQUEST ARC
   </h3>
 </div>
 
+
+
 <div class="tab-bar" id="tabBar">
+
   <button class="tab-btn active" data-tab="arc"><span class="tab-label">ARC Sign-Ups</span></button>
   <button class="tab-btn" data-tab="released"><span class="tab-label">Now Available</span></button>
   <button class="tab-btn" data-tab="all"><span class="tab-label">All Books</span></button>
