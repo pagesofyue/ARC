@@ -123,8 +123,8 @@
 
   /* Pinned note */
   .note-wrap{
-    max-width:760px;
-    margin:0 auto;
+    max-width:600px;
+    flex:1 1 420px;
     position:relative;
     z-index:2;
   }
@@ -134,9 +134,9 @@
     border:1px solid var(--ink);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
-    padding:26px 44px 22px 26px;
-    font-size:13.5px;
-    line-height:1.65;
+    padding:20px 36px 18px 20px;
+    font-size:12.5px;
+    line-height:1.55;
     color:var(--ink-soft);
   }
   .note-close{
@@ -196,14 +196,19 @@
     color:var(--ink);
     border:1px solid var(--ink);
     border-bottom:none;
+    border-radius:10px 10px 0 0;
     cursor:pointer;
-    padding:16px 26px 12px;
-    margin-right:-16px;
-    clip-path: polygon(14% 0%, 86% 0%, 100% 100%, 0% 100%);
+    padding:16px 24px 12px;
+    margin-right:-14px;
     position:relative;
     opacity:0.82;
-    transform:translateY(4px);
+    transform:skewX(-9deg) translateY(4px);
+    transform-origin:bottom left;
     transition:transform 0.15s ease, opacity 0.15s ease;
+  }
+  .tab-btn .tab-label{
+    display:inline-block;
+    transform:skewX(9deg);
   }
   .tab-btn:last-child{ margin-right:0; }
   .tab-btn[data-tab="arc"]{ background:#E4CBE4; }
@@ -213,7 +218,7 @@
   .tab-btn.active{
     z-index:10;
     opacity:1;
-    transform:translateY(0);
+    transform:skewX(-9deg) translateY(0);
     font-weight:700;
     padding-top:18px;
   }
@@ -764,26 +769,34 @@
   }
   .suggest-book-btn:hover{ background:var(--ink); color:var(--card-bg); }
   .note-flank-wrap{
-    position:relative;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:16px;
     max-width:1400px;
     margin:28px auto 0;
     padding:0 24px;
   }
-  .sticky-notes{
-    position:relative;
+  .sticky-col{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+    flex:1 1 160px;
+    max-width:210px;
+    padding-top:10px;
   }
   .sticky-note{
-    position:absolute;
-    width:150px;
+    position:relative;
+    width:100%;
     border:1px solid var(--manila-dark);
     border-radius:2px;
-    padding:14px 14px 10px;
+    padding:14px 16px 12px 30px;
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
     line-height:1.45;
     color:var(--ink);
     box-shadow:0 5px 12px rgba(28,37,65,0.2);
-    z-index:1;
   }
   .sticky-note::after{
     content:"";
@@ -796,11 +809,10 @@
   }
   .status-text{
     display:block;
-    padding-right:6px;
   }
   .status-close{
     position:absolute;
-    top:3px; left:5px;
+    top:4px; left:6px;
     background:none;
     border:none;
     color:var(--ink);
@@ -810,18 +822,6 @@
     opacity:0.55;
   }
   .status-close:hover{ opacity:1; }
-  @media (max-width: 900px){
-    .sticky-note{
-      position:static;
-      transform:none !important;
-      width:auto;
-      margin:0 0 10px;
-    }
-    .sticky-notes{
-      display:flex;
-      flex-direction:column;
-    }
-  }
   .last-updated{
     font-family:'IBM Plex Mono', monospace;
     font-size:10.5px;
@@ -846,7 +846,7 @@
 </header>
 
 <div class="note-flank-wrap">
-  <div class="sticky-notes" id="statusWrap"></div>
+  <div class="sticky-col" id="stickyLeft"></div>
   <div class="note-wrap" id="noteWrap">
     <div class="pinned-note">
       <button class="note-close" id="noteClose" aria-label="Hide this note">&times;</button>
@@ -859,6 +859,7 @@
       <p><i>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</i></p>
     </div>
   </div>
+  <div class="sticky-col" id="stickyRight"></div>
 </div>
 
 <div class="controls">
@@ -923,9 +924,9 @@
 </div>
 
 <div class="tab-bar" id="tabBar">
-  <button class="tab-btn active" data-tab="arc">ARC Sign-Ups</button>
-  <button class="tab-btn" data-tab="released">Now Available</button>
-  <button class="tab-btn" data-tab="all">All Books</button>
+  <button class="tab-btn active" data-tab="arc"><span class="tab-label">ARC Sign-Ups</span></button>
+  <button class="tab-btn" data-tab="released"><span class="tab-label">Now Available</span></button>
+  <button class="tab-btn" data-tab="all"><span class="tab-label">All Books</span></button>
 </div>
 
 <main>
@@ -1031,10 +1032,13 @@
       skipEmptyLines: true,
       complete: function(results){
         const rows = results.data || [];
-        const statusWrap = document.getElementById('statusWrap');
-        statusWrap.innerHTML = '';
+        const leftCol = document.getElementById('stickyLeft');
+        const rightCol = document.getElementById('stickyRight');
+        leftCol.innerHTML = '';
+        rightCol.innerHTML = '';
 
         const noteColors = ['#E4CBE4', '#C2E3DC', '#D9C8A0'];
+        const rotations = [-2, 1.5, -1.5, 2, -2.5, 2.5];
         let lastUpdated = '';
         let shownIndex = 0;
 
@@ -1045,22 +1049,17 @@
           if(rowLastUpdated && !lastUpdated) lastUpdated = rowLastUpdated;
 
           if(message && active === 'show'){
-            const side = shownIndex % 2 === 0 ? 'left' : 'right';
-            const stack = Math.floor(shownIndex / 2);
-            const rotation = (side === 'left' ? -1 : 1) * (5 + (shownIndex * 4) % 9);
-
+            const targetCol = shownIndex % 2 === 0 ? leftCol : rightCol;
             const note = document.createElement('div');
             note.className = 'sticky-note';
             note.style.background = noteColors[shownIndex % noteColors.length];
-            note.style.top = (10 + stack * 100) + 'px';
-            note.style[side] = (6 + stack * 12) + 'px';
-            note.style.transform = `rotate(${rotation}deg)`;
+            note.style.transform = `rotate(${rotations[shownIndex % rotations.length]}deg)`;
             note.innerHTML = `<button class="status-close" aria-label="Dismiss update">&times;</button><span class="status-text"></span>`;
             note.querySelector('.status-text').textContent = message;
             note.querySelector('.status-close').addEventListener('click', function(){
               note.remove();
             });
-            statusWrap.appendChild(note);
+            targetCol.appendChild(note);
             shownIndex++;
           }
         });
