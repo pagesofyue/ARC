@@ -198,7 +198,7 @@
   .pinned-note .signoff{
     font-family: Garamond, Georgia, serif; 
     font-size:11px;
-    color:var(--stamp-teal);
+    color:var(--stamp-byz);
     text-transform:uppercase;
     letter-spacing:0.06em;
   }
@@ -213,7 +213,7 @@
     align-items:flex-end;
   }
   .tab-btn{
-    font-family:"Hiraya Sans", sans-serif;
+    font-family:"Hiraya Bold", sans-serif;
     font-size:11.5px;
     letter-spacing:0.05em;
     text-transform:uppercase;
@@ -270,7 +270,7 @@
     min-width:110px;
   }
   .field label{
-    font-family:"Hiraya Sans", sans-serif;
+    font-family:"Hiraya Bold", sans-serif;
     font-size:10.5px;
     letter-spacing:0.1em;
     text-transform:uppercase;
@@ -279,7 +279,7 @@
   }
   .field input[type="text"], .field input[type="date"], .field select{
     font-family:"Yue Typo", sans-serif;
-    font-size:13px;
+    font-size:15px;
     padding:9px 8px;
     border:1px solid var(--ink);
     border-radius:var(--radius);
@@ -292,8 +292,8 @@
     outline-offset:1px;
   }
   .reset-btn{
-    font-family:"Hiraya Sans", sans-serif;
-    font-size:11px;
+    font-family:"Hiraya Bold", sans-serif;
+    font-size:8px;
     letter-spacing:0.08em;
     text-transform:uppercase;
     background:transparent;
@@ -304,7 +304,7 @@
     color:var(--ink);
     white-space:nowrap;
   }
-  .reset-btn:hover{ background:var(--ink); color:var(--card-bg); }
+  .reset-btn:hover{ background:var(--stamp-byz); color:var(--card-bg); }
 
   /* Grid */
   main{
@@ -846,7 +846,7 @@
     border-radius:2px;
     padding:14px 16px 12px 30px;
     font-family:"Hiraya Sans", sans-serif;
-    font-size:13px;
+    font-size:14px;
     font-weight:600;
     line-height:1.45;
     color:var(--ink);
@@ -921,13 +921,13 @@
   <div class="note-wrap" id="noteWrap">
     <div class="pinned-note">
       <button class="note-close" id="noteClose" aria-label="Hide this note">&times;</button>
-      <h2>Before you browse</h2>
+      <h2>Before you &nbsp;Browse</h2>
       <p><strong>For The Love of Pages</strong> is not affiliated with any authors, publishers, or PR teams whose books appear here. This is a personal catalog, not an official partnership. I do not charge for book features or receive payment for promoting books. Any support through Ko-fi is entirely voluntary and never required for a book to be featured.</p>
       <p>If you're an author or part of a PR team and would like your book featured or removed, please feel free to reach out. Everything here is shared in good faith, and I never want to overstep. My goal is simply to help connect readers with authors and their books.</p>
       <p>This is a community space for readers and authors to share books they've written, discovered, or loved, with a special focus on indie authors. Have a book you think belongs here? Send me a DM on social media.</p>
       <p>Please note that updates may not always be in real time. I run this alongside my 9-to-5 job, so new books are added whenever I can, ideally daily. Saturdays are my dedicated update day, though I may add books throughout the week when time allows.</p>
       <p class="signoff">A follow or a little love on my socials, @pagesofyue, or at pagesofyue.com is always appreciated, but <b><u>NEVER</u></b> required.</p>
-      <p><i>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</i></p>
+      <p>If you'd like to support the time and effort that goes into maintaining this catalog, you can also find me on Ko-fi. This is entirely optional. A quiet thank you is more than enough.</p>
     </div>
   </div>
   <div class="sticky-col" id="stickyRight"></div>
@@ -1311,10 +1311,19 @@
   */
   const GENRE_COLOR_MAP = {
     "Fantasy": "#120A2A ",
+"Dark Fantasy" : "#2C1C63",
     "Romantasy": "#4E1222  ",
     "Romance": "#9C4368",
-"Mystery" : "#301e4e",
-"Formula 1" : "#FF1E00"
+    "Dark Romance": "#754D5C",
+    "Dystopian Romance": "#D9A3A3",
+    "Paranormal Romance": "#CF5757",
+    "Fiction" : "#527E9C",
+    "Mystery" : "#301e4e",
+    "Formula 1" : "#FF1E00",
+    "Non-Fiction" : "#FFD8BE",
+    "Audiobook": "#E2B5F5",
+    "Psychological Thriller" : "#696575",
+    "Horror" : "#422324"
 
   };
 
