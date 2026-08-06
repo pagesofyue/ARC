@@ -1145,13 +1145,13 @@
   function rowToBook(row){
     return {
       title: getField(row, 'Title'),
-      author: getField(row, 'Author'),
+      author: splitList(getField(row, 'Author')),
       socialMedia: getField(row, 'Social Media'),
       series: getField(row, 'Series'),
       cover: getField(row, 'Cover URL'),
       genres: splitList(getField(row, 'Genre')),
       tropes: splitList(getField(row, 'Tropes')),
-      platform: getField(row, 'Platform'),
+      platform: splitList(getField(row, 'Platform')),
       releaseDate: getField(row, 'Release Date'),
       arcReleaseDate: getField(row, 'ARC Release Date'),
       batchNo: getField(row, 'Batch No'),
@@ -1193,45 +1193,45 @@
   const SAMPLE_BOOKS = [
     {
       title: "Just Between Us",
-      author: "Jenny Cross",
+      author: ["Jenny Cross"],
       series: "Book 3 of Singing River Sound",
       cover: "https://m.media-amazon.com/images/I/81CmAztyGmL._SY466_.jpg",
       genres: ["Romance"],
       tropes: ["Small Town"],
-      platform: "Direct",
+      platform: ["Direct"],
       releaseDate: "2026-07-18",
       blurb: "",
       amazonLink: ""
     },
     {
       title: "Nine Ways to Vanish",
-      author: "Priya Ashworth",
+      author: ["Priya Ashworth"],
       cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=600&q=80",
       genres: ["Mystery", "Thriller"],
       tropes: ["Cold case", "Small town secrets"],
-      platform: "Author Direct",
+      platform: ["Author Direct"],
       releaseDate: "2026-08-02",
       blurb: "",
       amazonLink: ""
     },
           {
       title: "Low Tide at Cape Merrow",
-      author: "Junie Halvorsen",
+      author: ["Junie Halvorsen"],
       cover: "https://m.media-amazon.com/images/I/519X4tlt6IL.SX316.SY480._SL500_.jpg",
       genres: ["Formula 1"],
       tropes: ["Slow burn", "Single parent"],
-      platform: "BookSirens",
+      platform: ["BookSirens"],
       releaseDate: "2026-07-22",
       blurb: "",
       amazonLink: "https://www.amazon.com/"
     },
     {
       title: "The Ledger of Small Gods",
-      author: "Tomasz Ferreira",
+      author: ["Tomasz Ferreira"],
       cover: "https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=600&q=80",
       genres: ["Fantasy", "Historical Fiction"],
       tropes: ["Morally gray protagonist", "Slow burn"],
-      platform: "Storytime Book Tours",
+      platform: ["Storytime Book Tours"],
       releaseDate: "2026-10-28",
       blurb: "",
       amazonLink: ""
@@ -1364,14 +1364,14 @@
       genreSelect.appendChild(opt);
     });
 
-    const allPlatforms = uniqueSorted(BOOKS.map(b=>b.platform).filter(Boolean));
+    const allPlatforms = uniqueSorted(BOOKS.flatMap(b=>b.platform || []));
     allPlatforms.forEach(p=>{
       const opt = document.createElement('option');
       opt.value = p; opt.textContent = p;
       platformSelect.appendChild(opt);
     });
 
-    const allAuthors = uniqueSorted(BOOKS.map(b=>b.author).filter(Boolean));
+    const allAuthors = uniqueSorted(BOOKS.flatMap(b=>b.author || []));
     allAuthors.forEach(a=>{
       const opt = document.createElement('option');
       opt.value = a; opt.textContent = a;
@@ -1426,7 +1426,7 @@
   }
 
   function isReleased(book){
-    if((book.platform||'').toLowerCase().includes('amazon')) return true;
+    if((book.platform||[]).some(p=>p.toLowerCase().includes('amazon'))) return true;
     if(!book.releaseDate) return false;
     const releaseDay = new Date(book.releaseDate + 'T00:00:00');
     if(isNaN(releaseDay)) return false;
@@ -1501,9 +1501,9 @@
       </div>
       <div class="card-body">
         <p class="card-title">${book.title}</p>
-        <p class="card-author">${book.author}</p>
+        <p class="card-author">${(book.author && book.author.length) ? book.author.join(', ') : ''}</p>
         <p class="card-series">${book.series || ''}</p>
-        <p class="card-platform">${book.platform || 'Not listed'}</p>
+        <p class="card-platform">${(book.platform && book.platform.length) ? book.platform.join(', ') : 'Not listed'}</p>
         <button class="details-btn" data-book-index="${index}">Details</button>
       </div>
     `;
@@ -1524,10 +1524,17 @@
     const batch = batchSelect.value;
 
     let filtered = BOOKS.filter(b=>{
-      const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+      const authorText = (b.author || []).join(', ').toLowerCase();
+      const tropeText = (b.tropes || []).join(', ').toLowerCase();
+      const seriesText = (b.series || '').toLowerCase();
+      const matchesQ = !q
+        || b.title.toLowerCase().includes(q)
+        || authorText.includes(q)
+        || tropeText.includes(q)
+        || seriesText.includes(q);
       const matchesGenre = !genre || (b.genres || []).includes(genre);
-      const matchesAuthor = !author || b.author === author;
-      const matchesPlatform = !platform || b.platform === platform;
+      const matchesAuthor = !author || (b.author || []).includes(author);
+      const matchesPlatform = !platform || (b.platform || []).includes(platform);
       const matchesTrope = !trope || (b.tropes || []).includes(trope);
       const matchesBatch = !batch || b.batchNo === batch;
       const matchesTab = currentTab === 'all'
@@ -1541,8 +1548,8 @@
     }
 
     filtered.sort((a,b)=>{
-      const aIsAmazon = (a.platform||'').toLowerCase().includes('amazon');
-      const bIsAmazon = (b.platform||'').toLowerCase().includes('amazon');
+      const aIsAmazon = (a.platform||[]).some(p=>p.toLowerCase().includes('amazon'));
+      const bIsAmazon = (b.platform||[]).some(p=>p.toLowerCase().includes('amazon'));
       if(aIsAmazon !== bIsAmazon) return aIsAmazon ? 1 : -1;
 
       const aKey = effectiveDateKey(a);
@@ -1652,7 +1659,7 @@
     document.getElementById('modalTitle').textContent = book.title;
     document.getElementById('modalSeries').textContent = book.series || '';
     document.getElementById('modalSeries').style.display = book.series ? '' : 'none';
-    document.getElementById('modalAuthor').textContent = book.author;
+    document.getElementById('modalAuthor').textContent = (book.author && book.author.length) ? book.author.join(', ') : '';
 
     const socialEl = document.getElementById('modalSocial');
     const social = (book.socialMedia || '').trim();
@@ -1694,7 +1701,7 @@
       modalReleasedEl.style.display = 'none';
     }
 
-    let stampRows = `<dt>Platform</dt><dd>${book.platform || 'Not listed'}</dd>`;
+    let stampRows = `<dt>Platform</dt><dd>${(book.platform && book.platform.length) ? book.platform.join(', ') : 'Not listed'}</dd>`;
     stampRows += `<dt>Release Date</dt><dd>${formatDate(book.releaseDate)}</dd>`;
     if(book.arcReleaseDate){
       stampRows += `<dt>ARC Release Date</dt><dd>${formatDate(book.arcReleaseDate)}</dd>`;
