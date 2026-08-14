@@ -609,14 +609,28 @@
     const gap = 24;
     const gridWidth = width - pad * 2;
     const gridHeight = height - headerHeight - footerHeight - pad;
-    const cellWidth = (gridWidth - gap * (cols - 1)) / cols;
+    const cellOuterWidth = (gridWidth - gap * (cols - 1)) / cols;
     const textHeight = 64;
-    const cellImgHeight = ((gridHeight - gap * (rows - 1)) / rows) - textHeight;
+    const rowBudget = (gridHeight - gap * (rows - 1)) / rows;
+    const imgHeightBudget = rowBudget - textHeight;
+
+    // Keep covers at their natural 2:3 portrait aspect. Whichever dimension
+    // is tighter (column width vs. row height) determines the final size,
+    // so covers are never stretched or cropped to a mismatched box.
+    let imgW = imgHeightBudget * (2 / 3);
+    let imgH = imgHeightBudget;
+    if(imgW > cellOuterWidth){
+      imgW = cellOuterWidth;
+      imgH = imgW * 1.5;
+    }
+    const rowStep = imgH + textHeight + gap;
+    const gridContentHeight = rows * rowStep - gap;
+    const verticalOffset = Math.max(0, (gridHeight - gridContentHeight) / 2);
 
     const images = await Promise.all(
       chunkBooks.map(b => loadImage(
         b.cover,
-        proxiedCover(b.cover, Math.round(cellWidth * 1.5), Math.round(cellImgHeight * 1.5)),
+        proxiedCover(b.cover, Math.round(imgW * 2), Math.round(imgH * 2)),
         b.title
       ))
     );
@@ -624,29 +638,33 @@
     chunkBooks.forEach((book, i)=>{
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const x = pad + col * (cellWidth + gap);
-      const y = headerHeight + pad / 2 + row * (cellImgHeight + textHeight + gap);
+      const cellX = pad + col * (cellOuterWidth + gap);
+      const x = cellX + (cellOuterWidth - imgW) / 2;
+      const y = headerHeight + pad / 2 + verticalOffset + row * rowStep;
 
       const img = images[i];
       if(img){
-        ctx.drawImage(img, x, y, cellWidth, cellImgHeight);
+        ctx.drawImage(img, x, y, imgW, imgH);
         ctx.strokeStyle = '#1C2541';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, cellWidth, cellImgHeight);
+        ctx.strokeRect(x, y, imgW, imgH);
       } else {
         ctx.fillStyle = '#D9C8A0';
-        ctx.fillRect(x, y, cellWidth, cellImgHeight);
+        ctx.fillRect(x, y, imgW, imgH);
         ctx.strokeStyle = '#1C2541';
-        ctx.strokeRect(x, y, cellWidth, cellImgHeight);
+        ctx.strokeRect(x, y, imgW, imgH);
+        ctx.fillStyle = '#4A5170';
+        ctx.font = "400 14px 'IBM Plex Mono', monospace";
+        ctx.fillText('cover unavailable', x + 10, y + imgH / 2);
       }
 
       ctx.fillStyle = '#1C2541';
       ctx.font = "600 22px Fraunces, serif";
-      ctx.fillText(truncateToWidth(ctx, book.title, cellWidth), x, y + cellImgHeight + 26);
+      ctx.fillText(truncateToWidth(ctx, book.title, imgW), x, y + imgH + 26);
 
       ctx.fillStyle = '#4A5170';
       ctx.font = "400 18px Inter, sans-serif";
-      ctx.fillText(truncateToWidth(ctx, book.author || '', cellWidth), x, y + cellImgHeight + 50);
+      ctx.fillText(truncateToWidth(ctx, book.author || '', imgW), x, y + imgH + 50);
     });
 
     ctx.fillStyle = '#4A5170';
