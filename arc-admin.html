@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ARC Admin (Private)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --ink:#1C2541;
+    --ink-soft:#4A5170;
+    --page-bg:#EAE7DC;
+    --card-bg:#FBF9F3;
+    --manila:#D9C8A0;
+    --manila-dark:#BFA974;
+    --stamp-red:#A63D2F;
+    --stamp-teal:#35635A;
+    --byzantium:#702963;
+    --line:#C9C0A8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    padding:32px 20px 60px;
+  }
+  .wrap{ max-width:760px; margin:0 auto; }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.9rem;
+    margin:0 0 6px;
+  }
+  h2.section-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.25rem;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  .private-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--stamp-red);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:26px;
+  }
+  .panel{
+    background:var(--manila);
+    border:1px solid var(--manila-dark);
+    border-radius:8px;
+    padding:20px 22px;
+    margin-bottom:28px;
+  }
+  .field{ margin-bottom:14px; }
+  .field:last-child{ margin-bottom:0; }
+  .field-row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .field-row .field{ flex:1 1 160px; }
+  label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    opacity:0.75;
+    margin-bottom:6px;
+  }
+  select, input[type="text"], textarea{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:9px 10px;
+    border:1px solid var(--ink);
+    border-radius:3px;
+    background:var(--card-bg);
+    color:var(--ink);
+  }
+  textarea{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; resize:vertical; }
+  .closing-textarea{ min-height:90px; }
+  .btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    background:var(--ink);
+    color:var(--card-bg);
+    border:none;
+    border-radius:20px;
+    padding:11px 22px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .btn:hover{ background:var(--stamp-red); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .btn-secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--ink);
+    border-radius:3px;
+    padding:9px 16px;
+  }
+  .btn-secondary:hover{ background:var(--ink); color:var(--card-bg); }
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:10px 0 0;
+  }
+  .help-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    opacity:0.8;
+    margin:6px 0 0;
+    line-height:1.5;
+  }
+  .post-card{
+    background:var(--card-bg);
+    border:1px solid var(--ink);
+    border-radius:8px;
+    padding:16px 18px;
+    margin-bottom:16px;
+  }
+  .post-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+  }
+  .char-count{ color:var(--ink-soft); }
+  .char-count.over{ color:var(--stamp-red); font-weight:700; }
+  .post-text{
+    width:100%;
+    min-height:140px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    line-height:1.5;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px;
+    background:#fff;
+    white-space:pre-wrap;
+  }
+  .copy-btn{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    background:transparent;
+    border:1px solid var(--ink);
+    border-radius:3px;
+    padding:6px 12px;
+    cursor:pointer;
+    margin-top:8px;
+  }
+  .copy-btn:hover{ background:var(--ink); color:var(--card-bg); }
+  .copy-btn.copied{ background:var(--stamp-teal); color:#fff; border-color:var(--stamp-teal); }
+  .export-card{
+    background:var(--card-bg);
+    border:1px solid var(--ink);
+    border-radius:8px;
+    padding:16px 18px;
+    margin-bottom:16px;
+    text-align:center;
+  }
+  .export-card canvas{
+    max-width:100%;
+    height:auto;
+    border:1px solid var(--line);
+    border-radius:4px;
+    margin-bottom:10px;
+  }
+  .export-card .export-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ARC Admin</h1>
+  <div class="private-note">Private tool, not linked from the public site</div>
+
+  <div class="panel">
+    <h2 class="section-title">Post generator</h2>
+
+    <div class="field">
+      <label for="templateSelect">Post template</label>
+      <select id="templateSelect">
+        <option value="">Custom (type your own below)</option>
+      </select>
+      <div class="help-line" id="templateHelp"></div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="batchSelect">Batch</label>
+        <select id="batchSelect">
+          <option value="">Loading batches...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="catalogLink">Catalog link</label>
+        <input type="text" id="catalogLink" value="https://arc.pagesofyue.com">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="closingText">Closing message (shown once, on the last post)</label>
+      <textarea id="closingText" class="closing-textarea">A repost of this would mean a lot and help these opportunities reach more readers. You can follow or check the catalog from time to time for new updates. Thank you for your support! 🫶</textarea>
+    </div>
+    <button class="btn" id="generateBtn" disabled>Generate post</button>
+    <div class="status-line" id="statusLine">Loading books from your sheet...</div>
+  </div>
+
+  <div id="output"></div>
+
+  <div class="panel">
+    <h2 class="section-title">Image export</h2>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="groupBySelect">Group by</label>
+        <select id="groupBySelect">
+          <option value="batchNo">Batch</option>
+          <option value="platform">Platform</option>
+          <option value="genre">Genre</option>
+          <option value="author">Author</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="groupValueSelect">Value</label>
+        <select id="groupValueSelect">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="formatSelect">Format</label>
+        <select id="formatSelect">
+          <option value="post">IG post (4:5)</option>
+          <option value="story">IG story (9:16)</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn" id="exportBtn" disabled>Generate images</button>
+    <div class="status-line" id="exportStatusLine">Waiting on your book data...</div>
+  </div>
+
+  <div id="exportOutput"></div>
+</div>
+
+<script>
+  /*
+    TEMPLATES SETUP (one-time):
+    1. In your Google Sheet, add a new tab named "Templates" with two
+       columns: "Template Name" and "Closing Text".
+    2. File > Share > Publish to web, choose the Templates tab,
+       format CSV, publish, and copy the link below.
+    3. Paste that link into TEMPLATES_CSV_URL. Add or edit rows any
+       time directly in that Sheet tab -- this tool only reads them,
+       it does not write back to the Sheet.
+  */
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPbiaJvtyol6XVcK3xcac2_hAAxlJ3w796tAThz53CCXTDW5kHycW15YLT5B6wz8wIVk8iBDyZaVnG/pub?gid=0&single=true&output=csv";
+  const TEMPLATES_CSV_URL = "PASTE_YOUR_TEMPLATES_CSV_LINK_HERE";
+  const CHAR_LIMIT = 500;
+  const BRAND_COLOR = "#702963";
+
+  let BOOKS = [];
+  let TEMPLATES = [];
+
+  function getField(row, name){
+    const targetKey = name.trim().toLowerCase();
+    const actualKey = Object.keys(row).find(k => k.trim().toLowerCase() === targetKey);
+    return actualKey ? (row[actualKey] || '').trim() : '';
+  }
+
+  function splitList(value){
+    if(!value) return [];
+    return value.split(',').map(s=>s.trim()).filter(Boolean);
+  }
+
+  function rowToBook(row){
+    return {
+      title: getField(row, 'Title'),
+      author: getField(row, 'Author'),
+      socialMedia: getField(row, 'Social Media'),
+      cover: getField(row, 'Cover URL'),
+      genres: splitList(getField(row, 'Genre')),
+      platforms: splitList(getField(row, 'Platform')),
+      batchNo: getField(row, 'Batch No'),
+      visibility: getField(row, 'Visibility').toLowerCase()
+    };
+  }
+
+  function formatHandle(raw){
+    if(!raw) return '';
+    if(raw.startsWith('@')) return raw;
+    if(/^https?:\/\//i.test(raw)) return raw;
+    return '@' + raw.replace(/^@/, '');
+  }
+
+  function loadBooks(){
+    Papa.parse(SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results){
+        const rows = (results.data || []).map(rowToBook);
+        BOOKS = rows.filter(b => b.title && b.visibility !== 'hide');
+        populateBatches();
+        populateGroupValues();
+        document.getElementById('statusLine').textContent = `Loaded ${BOOKS.length} books.`;
+        document.getElementById('generateBtn').disabled = false;
+        document.getElementById('exportStatusLine').textContent = `Loaded ${BOOKS.length} books.`;
+        document.getElementById('exportBtn').disabled = false;
+      },
+      error: function(err){
+        document.getElementById('statusLine').textContent = 'Could not load your sheet. Check your connection and try refreshing.';
+        document.getElementById('exportStatusLine').textContent = 'Could not load your sheet.';
+        console.error(err);
+      }
+    });
+  }
+
+  function loadTemplates(){
+    const select = document.getElementById('templateSelect');
+    const help = document.getElementById('templateHelp');
+    const isConfigured = TEMPLATES_CSV_URL && !TEMPLATES_CSV_URL.startsWith('PASTE_YOUR');
+    if(!isConfigured){
+      help.textContent = 'No Templates tab connected yet -- see the comment at the top of this file to set one up.';
+      return;
+    }
+    Papa.parse(TEMPLATES_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results){
+        TEMPLATES = (results.data || [])
+          .map(row => ({ name: getField(row, 'Template Name'), text: getField(row, 'Closing Text') }))
+          .filter(t => t.name && t.text);
+        TEMPLATES.forEach(t=>{
+          const opt = document.createElement('option');
+          opt.value = t.name; opt.textContent = t.name;
+          select.appendChild(opt);
+        });
+        help.textContent = TEMPLATES.length
+          ? `${TEMPLATES.length} template${TEMPLATES.length > 1 ? 's' : ''} loaded.`
+          : 'Templates tab is connected but empty. Add rows there any time.';
+      },
+      error: function(err){
+        help.textContent = 'Could not load the Templates tab.';
+        console.error(err);
+      }
+    });
+  }
+
+  document.getElementById('templateSelect').addEventListener('change', function(){
+    const chosen = TEMPLATES.find(t => t.name === this.value);
+    if(chosen) document.getElementById('closingText').value = chosen.text;
+  });
+
+  function populateBatches(){
+    const select = document.getElementById('batchSelect');
+    select.innerHTML = '';
+    const batches = [...new Set(BOOKS.map(b=>b.batchNo).filter(Boolean))]
+      .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
+    if(batches.length === 0){
+      select.innerHTML = '<option value="">No batches found in your sheet</option>';
+      return;
+    }
+    batches.forEach(b=>{
+      const opt = document.createElement('option');
+      opt.value = b; opt.textContent = b;
+      select.appendChild(opt);
+    });
+  }
+
+  function buildPages(catalogLink, lines, closing){
+    const baseHeader = `New ARC sign-ups have been added to the catalog (${catalogLink})`;
+
+    function pageHeader(k, n){
+      if(n === 1) return baseHeader;
+      if(k === 1) return `${baseHeader} (${k}/${n})`;
+      return `(${k}/${n})`;
+    }
+
+    for(let n = 1; n <= Math.max(lines.length, 1); n++){
+      let pages = [];
+      let idx = 0;
+      let ok = true;
+
+      for(let k = 1; k <= n; k++){
+        const header = pageHeader(k, n);
+        const isLast = k === n;
+        let pageLines = [];
+
+        while(idx < lines.length){
+          const tentativeLines = [...pageLines, lines[idx]];
+          const tentativeContent = header + '\n' + tentativeLines.join('\n') + (isLast ? '\n\n' + closing : '');
+          if(tentativeContent.length <= CHAR_LIMIT){
+            pageLines.push(lines[idx]);
+            idx++;
+          } else {
+            break;
+          }
+        }
+
+        if(pageLines.length === 0){
+          const emptyContent = header + (isLast ? '\n\n' + closing : '');
+          if(emptyContent.length > CHAR_LIMIT || idx < lines.length){
+            ok = false;
+            break;
+          }
+        }
+
+        const finalContent = header + (pageLines.length ? '\n' + pageLines.join('\n') : '') + (isLast ? '\n\n' + closing : '');
+        pages.push(finalContent);
+      }
+
+      if(ok && idx >= lines.length && pages.length === n){
+        return pages;
+      }
+    }
+
+    return [baseHeader + '\n\n' + closing];
+  }
+
+  function renderOutput(pages){
+    const output = document.getElementById('output');
+    output.innerHTML = '';
+    pages.forEach((text, i)=>{
+      const card = document.createElement('div');
+      card.className = 'post-card';
+      const over = text.length > CHAR_LIMIT;
+      card.innerHTML = `
+        <div class="post-card-head">
+          <span>Post ${i+1} of ${pages.length}</span>
+          <span class="char-count ${over ? 'over' : ''}">${text.length} / ${CHAR_LIMIT}</span>
+        </div>
+        <textarea class="post-text" readonly>${text}</textarea>
+        <button class="copy-btn">Copy</button>
+      `;
+      const btn = card.querySelector('.copy-btn');
+      btn.addEventListener('click', function(){
+        navigator.clipboard.writeText(text).then(()=>{
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(()=>{ btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+        });
+      });
+      output.appendChild(card);
+    });
+  }
+
+  document.getElementById('generateBtn').addEventListener('click', function(){
+    const batch = document.getElementById('batchSelect').value;
+    const catalogLink = document.getElementById('catalogLink').value.trim();
+    const closing = document.getElementById('closingText').value.trim();
+
+    const batchBooks = BOOKS.filter(b => b.batchNo === batch);
+    if(batchBooks.length === 0){
+      document.getElementById('statusLine').textContent = 'No books found for that batch.';
+      document.getElementById('output').innerHTML = '';
+      return;
+    }
+
+    const lines = batchBooks.map(b=>{
+      const handle = formatHandle(b.socialMedia);
+      return handle ? `\uD83D\uDCDA ${b.title} by ${handle}` : `\uD83D\uDCDA ${b.title}`;
+    });
+
+    const pages = buildPages(catalogLink, lines, closing);
+    renderOutput(pages);
+    document.getElementById('statusLine').textContent = `Generated ${pages.length} post${pages.length > 1 ? 's' : ''} for ${batchBooks.length} book${batchBooks.length > 1 ? 's' : ''} in batch "${batch}".`;
+  });
+
+  function groupByField(key){
+    if(key === 'genre') return b => b.genres;
+    if(key === 'platform') return b => b.platforms;
+    if(key === 'author') return b => [b.author].filter(Boolean);
+    return b => [b.batchNo].filter(Boolean);
+  }
+
+  function populateGroupValues(){
+    const key = document.getElementById('groupBySelect').value;
+    const getter = groupByField(key);
+    const values = [...new Set(BOOKS.flatMap(getter))].filter(Boolean)
+      .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
+    const select = document.getElementById('groupValueSelect');
+    select.innerHTML = '';
+    if(values.length === 0){
+      select.innerHTML = '<option value="">No values found</option>';
+      return;
+    }
+    values.forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      select.appendChild(opt);
+    });
+  }
+
+  document.getElementById('groupBySelect').addEventListener('change', populateGroupValues);
+
+  function proxiedCover(url, w, h){
+    if(!url) return '';
+    const stripped = url.replace(/^https?:\/\//i, '');
+    return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${h}&fit=cover&a=attention`;
+  }
+
+  function loadImage(src){
+    return new Promise((resolve)=>{
+      if(!src){ resolve(null); return; }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = ()=> resolve(img);
+      img.onerror = ()=> resolve(null);
+      img.src = src;
+    });
+  }
+
+  function truncateToWidth(ctx, text, maxWidth){
+    if(ctx.measureText(text).width <= maxWidth) return text;
+    let out = text;
+    while(out.length > 1 && ctx.measureText(out + '…').width > maxWidth){
+      out = out.slice(0, -1);
+    }
+    return out + '…';
+  }
+
+  const LOGO_PATH = "M16 10 C13.2 8 9 7.8 6.8 8.8 V23.5 C9 22.5 13.2 22.7 16 24.7 C18.8 22.7 23 22.5 25.2 23.5 V8.8 C23 7.8 18.8 8 16 10 Z";
+
+  function drawLogo(ctx, x, y, size){
+    const scale = size / 32;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#D9C8A0';
+    roundRect(ctx, 0, 0, size, size, size * 0.22);
+    ctx.fill();
+    ctx.translate(0, 0);
+    ctx.scale(scale, scale);
+    ctx.strokeStyle = '#1C2541';
+    ctx.lineWidth = 1.7 / scale * scale;
+    ctx.lineJoin = 'round';
+    ctx.stroke(new Path2D(LOGO_PATH));
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink){
+    const width = 1080;
+    const height = format === 'story' ? 1920 : 1350;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#EAE7DC';
+    ctx.fillRect(0, 0, width, height);
+
+    const headerHeight = format === 'story' ? 190 : 160;
+    const footerHeight = 70;
+    const pad = 40;
+
+    drawLogo(ctx, pad, format === 'story' ? 46 : 36, 56);
+    ctx.fillStyle = BRAND_COLOR;
+    ctx.font = "600 40px Fraunces, serif";
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('For the Love of Pages', pad + 76, format === 'story' ? 76 : 66);
+    ctx.font = "500 20px 'IBM Plex Mono', monospace";
+    ctx.fillText('NEW ARC SIGN UPS', pad + 76, format === 'story' ? 108 : 98);
+    ctx.strokeStyle = '#1C2541';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, headerHeight);
+    ctx.lineTo(width, headerHeight);
+    ctx.stroke();
+
+    const cols = 3, rows = 4;
+    const gap = 24;
+    const gridWidth = width - pad * 2;
+    const gridHeight = height - headerHeight - footerHeight - pad;
+    const cellWidth = (gridWidth - gap * (cols - 1)) / cols;
+    const textHeight = 64;
+    const cellImgHeight = ((gridHeight - gap * (rows - 1)) / rows) - textHeight;
+
+    const images = await Promise.all(
+      chunkBooks.map(b => loadImage(proxiedCover(b.cover, Math.round(cellWidth * 1.5), Math.round(cellImgHeight * 1.5))))
+    );
+
+    chunkBooks.forEach((book, i)=>{
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = pad + col * (cellWidth + gap);
+      const y = headerHeight + pad / 2 + row * (cellImgHeight + textHeight + gap);
+
+      const img = images[i];
+      if(img){
+        ctx.drawImage(img, x, y, cellWidth, cellImgHeight);
+        ctx.strokeStyle = '#1C2541';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, cellWidth, cellImgHeight);
+      } else {
+        ctx.fillStyle = '#D9C8A0';
+        ctx.fillRect(x, y, cellWidth, cellImgHeight);
+        ctx.strokeStyle = '#1C2541';
+        ctx.strokeRect(x, y, cellWidth, cellImgHeight);
+      }
+
+      ctx.fillStyle = '#1C2541';
+      ctx.font = "600 22px Fraunces, serif";
+      ctx.fillText(truncateToWidth(ctx, book.title, cellWidth), x, y + cellImgHeight + 26);
+
+      ctx.fillStyle = '#4A5170';
+      ctx.font = "400 18px Inter, sans-serif";
+      ctx.fillText(truncateToWidth(ctx, book.author || '', cellWidth), x, y + cellImgHeight + 50);
+    });
+
+    ctx.fillStyle = '#4A5170';
+    ctx.font = "400 18px 'IBM Plex Mono', monospace";
+    const footerText = catalogLink.replace(/^https?:\/\//i, '');
+    ctx.fillText(footerText, pad, height - footerHeight / 2 + 6);
+    if(totalChunks > 1){
+      const pageText = `${chunkIndex + 1} / ${totalChunks}`;
+      const pageWidth = ctx.measureText(pageText).width;
+      ctx.fillText(pageText, width - pad - pageWidth, height - footerHeight / 2 + 6);
+    }
+
+    return canvas;
+  }
+
+  document.getElementById('exportBtn').addEventListener('click', async function(){
+    const groupKey = document.getElementById('groupBySelect').value;
+    const groupValue = document.getElementById('groupValueSelect').value;
+    const format = document.getElementById('formatSelect').value;
+    const catalogLink = document.getElementById('catalogLink').value.trim() || 'arc.pagesofyue.com';
+    const getter = groupByField(groupKey);
+
+    const filtered = BOOKS
+      .filter(b => getter(b).includes(groupValue))
+      .sort((a,b)=> a.title.localeCompare(b.title));
+
+    const exportStatus = document.getElementById('exportStatusLine');
+    const exportOutput = document.getElementById('exportOutput');
+    exportOutput.innerHTML = '';
+
+    if(filtered.length === 0){
+      exportStatus.textContent = 'No books match that selection.';
+      return;
+    }
+
+    this.disabled = true;
+    exportStatus.textContent = `Rendering ${filtered.length} book${filtered.length > 1 ? 's' : ''}...`;
+
+    const chunks = [];
+    for(let i = 0; i < filtered.length; i += 12){
+      chunks.push(filtered.slice(i, i + 12));
+    }
+
+    if(document.fonts && document.fonts.ready){
+      await document.fonts.ready;
+    }
+
+    for(let i = 0; i < chunks.length; i++){
+      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink);
+      const card = document.createElement('div');
+      card.className = 'export-card';
+      const label = document.createElement('div');
+      label.className = 'export-label';
+      label.textContent = chunks.length > 1 ? `Image ${i + 1} of ${chunks.length}` : 'Image';
+      const downloadBtn = document.createElement('button');
+      downloadBtn.className = 'btn-secondary';
+      downloadBtn.textContent = 'Download PNG';
+      downloadBtn.addEventListener('click', function(){
+        canvas.toBlob(function(blob){
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `arc-export-${groupValue.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${i + 1}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      });
+      card.appendChild(label);
+      card.appendChild(canvas);
+      card.appendChild(downloadBtn);
+      exportOutput.appendChild(card);
+    }
+
+    exportStatus.textContent = `Generated ${chunks.length} image${chunks.length > 1 ? 's' : ''} for ${filtered.length} book${filtered.length > 1 ? 's' : ''}.`;
+    this.disabled = false;
+  });
+
+  loadBooks();
+  loadTemplates();
+</script>
+</body>
+</html>
