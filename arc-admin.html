@@ -516,7 +516,7 @@
     return `https://images.weserv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${h}&fit=cover&a=attention`;
   }
 
-  function loadImage(src){
+  function loadImageAttempt(src){
     return new Promise((resolve)=>{
       if(!src){ resolve(null); return; }
       const img = new Image();
@@ -525,6 +525,18 @@
       img.onerror = ()=> resolve(null);
       img.src = src;
     });
+  }
+
+  async function loadImage(originalUrl, proxyUrl, label){
+    // Try the direct URL first (some hosts already allow cross-origin reads).
+    let img = await loadImageAttempt(originalUrl);
+    if(img) return img;
+    // Fall back to the CORS proxy.
+    img = await loadImageAttempt(proxyUrl);
+    if(!img){
+      console.error('Cover failed to load for "' + label + '". Tried:', originalUrl, 'and proxy:', proxyUrl);
+    }
+    return img;
   }
 
   function truncateToWidth(ctx, text, maxWidth){
@@ -602,7 +614,11 @@
     const cellImgHeight = ((gridHeight - gap * (rows - 1)) / rows) - textHeight;
 
     const images = await Promise.all(
-      chunkBooks.map(b => loadImage(proxiedCover(b.cover, Math.round(cellWidth * 1.5), Math.round(cellImgHeight * 1.5))))
+      chunkBooks.map(b => loadImage(
+        b.cover,
+        proxiedCover(b.cover, Math.round(cellWidth * 1.5), Math.round(cellImgHeight * 1.5)),
+        b.title
+      ))
     );
 
     chunkBooks.forEach((book, i)=>{
