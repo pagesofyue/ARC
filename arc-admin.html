@@ -576,7 +576,7 @@
     ctx.closePath();
   }
 
-  async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink){
+  async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink, showSocial){
     const width = 1080;
     const height = format === 'story' ? 1920 : 1350;
     const canvas = document.createElement('canvas');
@@ -610,7 +610,7 @@
     const gridWidth = width - pad * 2;
     const gridHeight = height - headerHeight - footerHeight - pad;
     const cellOuterWidth = (gridWidth - gap * (cols - 1)) / cols;
-    const textHeight = 64;
+    const textHeight = showSocial ? 88 : 64;
     const rowBudget = (gridHeight - gap * (rows - 1)) / rows;
     const imgHeightBudget = rowBudget - textHeight;
 
@@ -658,13 +658,24 @@
         ctx.fillText('cover unavailable', x + 10, y + imgH / 2);
       }
 
+      ctx.textAlign = 'center';
       ctx.fillStyle = '#1C2541';
       ctx.font = "600 22px Fraunces, serif";
-      ctx.fillText(truncateToWidth(ctx, book.title, imgW), x, y + imgH + 26);
+      ctx.fillText(truncateToWidth(ctx, book.title, cellOuterWidth), cellX + cellOuterWidth / 2, y + imgH + 26);
 
       ctx.fillStyle = '#4A5170';
       ctx.font = "400 18px Inter, sans-serif";
-      ctx.fillText(truncateToWidth(ctx, book.author || '', imgW), x, y + imgH + 50);
+      ctx.fillText(truncateToWidth(ctx, book.author || '', cellOuterWidth), cellX + cellOuterWidth / 2, y + imgH + 50);
+
+      if(showSocial){
+        const handle = formatHandle(book.socialMedia);
+        if(handle){
+          ctx.fillStyle = '#35635A';
+          ctx.font = "400 16px 'IBM Plex Mono', monospace";
+          ctx.fillText(truncateToWidth(ctx, handle, cellOuterWidth), cellX + cellOuterWidth / 2, y + imgH + 72);
+        }
+      }
+      ctx.textAlign = 'left';
     });
 
     ctx.fillStyle = '#4A5170';
@@ -713,7 +724,7 @@
     }
 
     for(let i = 0; i < chunks.length; i++){
-      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink);
+      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, groupKey === 'author');
       const card = document.createElement('div');
       card.className = 'export-card';
       const label = document.createElement('div');
