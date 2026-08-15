@@ -605,7 +605,8 @@
     ctx.lineTo(width, headerHeight);
     ctx.stroke();
 
-    const cols = 3, rows = 4;
+    const cols = 3;
+    const rows = Math.max(1, Math.ceil(chunkBooks.length / cols));
     const gap = 24;
     const gridWidth = width - pad * 2;
     const gridHeight = height - headerHeight - footerHeight - pad;
@@ -636,9 +637,12 @@
     );
 
     chunkBooks.forEach((book, i)=>{
-      const col = i % cols;
       const row = Math.floor(i / cols);
-      const cellX = pad + col * (cellOuterWidth + gap);
+      const col = i % cols;
+      const itemsInRow = (row === rows - 1) ? (chunkBooks.length - row * cols) : cols;
+      const rowWidthUsed = itemsInRow * cellOuterWidth + (itemsInRow - 1) * gap;
+      const rowStartX = pad + (gridWidth - rowWidthUsed) / 2;
+      const cellX = rowStartX + col * (cellOuterWidth + gap);
       const x = cellX + (cellOuterWidth - imgW) / 2;
       const y = headerHeight + pad / 2 + verticalOffset + row * rowStep;
 
