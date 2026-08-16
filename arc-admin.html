@@ -510,6 +510,15 @@
 
   document.getElementById('groupBySelect').addEventListener('change', populateGroupValues);
 
+  const FALLBACK_COVER_URL = "https://i.pinimg.com/736x/97/c5/f3/97c5f3d81bc6dc45b6543174aaef8284.jpg";
+  let fallbackCoverImg = null;
+  function getFallbackCoverImg(){
+    if(!fallbackCoverImg){
+      fallbackCoverImg = loadImageAttempt(proxiedCover(FALLBACK_COVER_URL, 600, 900));
+    }
+    return fallbackCoverImg;
+  }
+
   function proxiedCover(url, w, h){
     if(!url) return '';
     const stripped = url.replace(/^https?:\/\//i, '');
@@ -629,11 +638,15 @@
     const verticalOffset = Math.max(0, (gridHeight - gridContentHeight) / 2);
 
     const images = await Promise.all(
-      chunkBooks.map(b => loadImage(
-        b.cover,
-        proxiedCover(b.cover, Math.round(imgW * 2), Math.round(imgH * 2)),
-        b.title
-      ))
+      chunkBooks.map(async b => {
+        const img = await loadImage(
+          b.cover,
+          proxiedCover(b.cover, Math.round(imgW * 2), Math.round(imgH * 2)),
+          b.title
+        );
+        if(img) return img;
+        return await getFallbackCoverImg();
+      })
     );
 
     chunkBooks.forEach((book, i)=>{
@@ -653,6 +666,7 @@
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, imgW, imgH);
       } else {
+        // Only reached if even the fallback cover image failed to load.
         ctx.fillStyle = '#D9C8A0';
         ctx.fillRect(x, y, imgW, imgH);
         ctx.strokeStyle = '#1C2541';
@@ -685,7 +699,9 @@
     ctx.fillStyle = '#4A5170';
     ctx.font = "400 18px 'IBM Plex Mono', monospace";
     const footerText = catalogLink.replace(/^https?:\/\//i, '');
-    ctx.fillText(footerText, pad, height - footerHeight / 2 + 6);
+    ctx.textAlign = 'center';
+    ctx.fillText(footerText, width / 2, height - footerHeight / 2 + 6);
+    ctx.textAlign = 'left';
     if(totalChunks > 1){
       const pageText = `${chunkIndex + 1} / ${totalChunks}`;
       const pageWidth = ctx.measureText(pageText).width;
