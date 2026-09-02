@@ -652,7 +652,7 @@
     ctx.closePath();
   }
 
-  async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink, showSocial){
+  async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink, showSocial, showDate){
     const width = 1080;
     const height = format === 'story' ? 1920 : 1350;
     const canvas = document.createElement('canvas');
@@ -690,7 +690,7 @@
     const gridWidth = width - pad * 2;
     const gridHeight = height - headerHeight - footerHeight - pad;
     const cellOuterWidth = (gridWidth - gap * (cols - 1)) / cols;
-    const textHeight = showSocial ? 88 : 64;
+    const textHeight = (showSocial || showDate) ? 88 : 64;
     const rowBudget = (gridHeight - gap * (rows - 1)) / rows;
     const imgHeightBudget = rowBudget - textHeight;
 
@@ -763,6 +763,11 @@
           ctx.fillText(truncateToWidth(ctx, handle, cellOuterWidth), cellX + cellOuterWidth / 2, y + imgH + 72);
         }
       }
+      if(showDate && book.date){
+        ctx.fillStyle = '#A63D2F';
+        ctx.font = "500 16px 'IBM Plex Mono', monospace";
+        ctx.fillText(truncateToWidth(ctx, formatDateShort(book.date), cellOuterWidth), cellX + cellOuterWidth / 2, y + imgH + 72);
+      }
       ctx.textAlign = 'left';
     });
 
@@ -785,7 +790,7 @@
 
     ctx.fillStyle = '#8a8465';
     ctx.font = "400 14px 'IBM Plex Mono', monospace";
-    ctx.fillText('For more updates, follow @pagesofyue on Threads and Twitter', width / 2, footerTop + 64);
+    ctx.fillText('For more updates, follow @pagesofyue on Threads, Instagram and TikTok', width / 2, footerTop + 64);
     ctx.fillText('Keep me caffeinated on ko-fi: yuelovestoread', width / 2, footerTop + 84);
 
     ctx.textAlign = 'left';
@@ -866,7 +871,7 @@
     }
 
     for(let i = 0; i < chunks.length; i++){
-      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, showSocial);
+      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, showSocial, isDateMode);
       const card = document.createElement('div');
       card.className = 'export-card';
       const label = document.createElement('div');
