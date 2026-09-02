@@ -227,7 +227,15 @@
   <div class="panel">
     <h2 class="section-title">Image export</h2>
 
-    <div class="field-row">
+    <div class="field">
+      <label for="exportModeSelect">Select books by</label>
+      <select id="exportModeSelect">
+        <option value="group">Group (batch, platform, genre, author)</option>
+        <option value="daterange">Date range</option>
+      </select>
+    </div>
+
+    <div class="field-row" id="groupFilterFields">
       <div class="field">
         <label for="groupBySelect">Group by</label>
         <select id="groupBySelect">
@@ -243,13 +251,26 @@
           <option value="">Loading...</option>
         </select>
       </div>
+    </div>
+
+    <div class="field-row" id="dateRangeFields" style="display:none;">
       <div class="field">
-        <label for="formatSelect">Format</label>
-        <select id="formatSelect">
-          <option value="post">IG post (4:5)</option>
-          <option value="story">IG story (9:16)</option>
-        </select>
+        <label for="dateStartInput">Start date</label>
+        <input type="date" id="dateStartInput">
       </div>
+      <div class="field">
+        <label for="dateEndInput">End date</label>
+        <input type="date" id="dateEndInput">
+      </div>
+    </div>
+    <div class="help-line" id="dateRangeHelp" style="display:none;"></div>
+
+    <div class="field">
+      <label for="formatSelect">Format</label>
+      <select id="formatSelect">
+        <option value="post">IG post (4:5)</option>
+        <option value="story">IG story (9:16)</option>
+      </select>
     </div>
     <button class="btn" id="exportBtn" disabled>Generate images</button>
     <div class="status-line" id="exportStatusLine">Waiting on your book data...</div>
@@ -273,6 +294,10 @@
   const TEMPLATES_CSV_URL = "PASTE_YOUR_TEMPLATES_CSV_LINK_HERE";
   const CHAR_LIMIT = 500;
   const BRAND_COLOR = "#702963";
+  // Column in your Google Sheet used for the "export by date range" feature
+  // below. If your sheet's column header is named something else (e.g.
+  // "Release Date"), just change this string to match it exactly.
+  const DATE_FIELD_NAME = "Release Date";
 
   let BOOKS = [];
   let TEMPLATES = [];
@@ -289,6 +314,7 @@
   }
 
   function rowToBook(row){
+    const rawDate = getField(row, DATE_FIELD_NAME);
     return {
       title: getField(row, 'Title'),
       author: getField(row, 'Author'),
@@ -297,8 +323,34 @@
       genres: splitList(getField(row, 'Genre')),
       platforms: splitList(getField(row, 'Platform')),
       batchNo: getField(row, 'Batch No'),
-      visibility: getField(row, 'Visibility').toLowerCase()
+      visibility: getField(row, 'Visibility').toLowerCase(),
+      dateRaw: rawDate,
+      date: parseSheetDate(rawDate)
     };
+  }
+
+  // Parses common spreadsheet date formats (YYYY-MM-DD, MM/DD/YYYY, etc.)
+  // into a local-midnight Date. Returns null if the cell is empty or the
+  // value can't be understood as a date.
+  function parseSheetDate(raw){
+    if(!raw) return null;
+    const isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(isoMatch){
+      return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    }
+    const slashMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if(slashMatch){
+      let [, m, d, y] = slashMatch;
+      if(y.length === 2) y = '20' + y;
+      return new Date(Number(y), Number(m) - 1, Number(d));
+    }
+    const parsed = new Date(raw);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatDateShort(d){
+    if(!d) return '';
+    return d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
   }
 
   function formatHandle(raw){
@@ -510,6 +562,21 @@
 
   document.getElementById('groupBySelect').addEventListener('change', populateGroupValues);
 
+  const exportModeSelect = document.getElementById('exportModeSelect');
+  const groupFilterFields = document.getElementById('groupFilterFields');
+  const dateRangeFields = document.getElementById('dateRangeFields');
+  const dateRangeHelp = document.getElementById('dateRangeHelp');
+  dateRangeHelp.textContent = `Reads the "${DATE_FIELD_NAME}" column from your sheet. Books with no date there, or outside the range, are left out.`;
+
+  function updateExportModeUI(){
+    const isDateMode = exportModeSelect.value === 'daterange';
+    groupFilterFields.style.display = isDateMode ? 'none' : '';
+    dateRangeFields.style.display = isDateMode ? 'flex' : 'none';
+    dateRangeHelp.style.display = isDateMode ? '' : 'none';
+  }
+  exportModeSelect.addEventListener('change', updateExportModeUI);
+  updateExportModeUI();
+
   const FALLBACK_COVER_URL = "https://i.pinimg.com/736x/97/c5/f3/97c5f3d81bc6dc45b6543174aaef8284.jpg";
   let fallbackCoverImg = null;
   function getFallbackCoverImg(){
@@ -597,16 +664,16 @@
     ctx.fillRect(0, 0, width, height);
 
     const headerHeight = format === 'story' ? 190 : 160;
-    const footerHeight = 70;
+    const footerHeight = 108;
     const pad = 40;
 
     drawLogo(ctx, pad, format === 'story' ? 46 : 36, 56);
     ctx.fillStyle = BRAND_COLOR;
     ctx.font = "600 40px Fraunces, serif";
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('For the Love of Pages', pad + 76, format === 'story' ? 76 : 66);
+    ctx.fillText('For The Love of Pages', pad + 76, format === 'story' ? 76 : 66);
     ctx.font = "500 20px 'IBM Plex Mono', monospace";
-    ctx.fillText('NEW ARC SIGN UPS', pad + 76, format === 'story' ? 108 : 98);
+    ctx.fillText('New ARC/ALC Sign Ups and Releases', pad + 76, format === 'story' ? 108 : 98);
     ctx.strokeStyle = '#1C2541';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -614,7 +681,10 @@
     ctx.lineTo(width, headerHeight);
     ctx.stroke();
 
-    const cols = 3;
+    // Fewer columns than the standard 3 when there aren't enough books to
+    // fill a row, so a single cover (or a pair) renders large instead of
+    // shrinking to fit a mostly-empty 3-wide grid.
+    const cols = Math.min(3, chunkBooks.length);
     const rows = Math.max(1, Math.ceil(chunkBooks.length / cols));
     const gap = 24;
     const gridWidth = width - pad * 2;
@@ -696,39 +766,91 @@
       ctx.textAlign = 'left';
     });
 
-    ctx.fillStyle = '#4A5170';
-    ctx.font = "400 18px 'IBM Plex Mono', monospace";
-    const footerText = catalogLink.replace(/^https?:\/\//i, '');
+    // Footer: quiet, small, centered -- a couple of links plus a
+    // support/follow note. Kept low-key on purpose, not a hard sell.
+    const footerTop = height - footerHeight;
+    ctx.strokeStyle = '#C9C0A8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, footerTop + 14);
+    ctx.lineTo(width - pad, footerTop + 14);
+    ctx.stroke();
+
+    const catalogText = catalogLink.replace(/^https?:\/\//i, '');
     ctx.textAlign = 'center';
-    ctx.fillText(footerText, width / 2, height - footerHeight / 2 + 6);
+
+    ctx.fillStyle = '#4A5170';
+    ctx.font = "500 17px 'IBM Plex Mono', monospace";
+    ctx.fillText(`pagesofyue.com  \u00B7  ${catalogText}`, width / 2, footerTop + 40);
+
+    ctx.fillStyle = '#8a8465';
+    ctx.font = "400 14px 'IBM Plex Mono', monospace";
+    ctx.fillText('For more updates, follow @pagesofyue on Threads and Twitter', width / 2, footerTop + 64);
+    ctx.fillText('Keep me caffeinated on ko-fi: yuelovestoread', width / 2, footerTop + 84);
+
     ctx.textAlign = 'left';
     if(totalChunks > 1){
       const pageText = `${chunkIndex + 1} / ${totalChunks}`;
+      ctx.fillStyle = '#4A5170';
+      ctx.font = "400 15px 'IBM Plex Mono', monospace";
       const pageWidth = ctx.measureText(pageText).width;
-      ctx.fillText(pageText, width - pad - pageWidth, height - footerHeight / 2 + 6);
+      ctx.fillText(pageText, width - pad - pageWidth, footerTop + 40);
     }
 
     return canvas;
   }
 
   document.getElementById('exportBtn').addEventListener('click', async function(){
-    const groupKey = document.getElementById('groupBySelect').value;
-    const groupValue = document.getElementById('groupValueSelect').value;
+    const isDateMode = exportModeSelect.value === 'daterange';
     const format = document.getElementById('formatSelect').value;
     const catalogLink = document.getElementById('catalogLink').value.trim() || 'arc.pagesofyue.com';
-    const getter = groupByField(groupKey);
-
-    const filtered = BOOKS
-      .filter(b => getter(b).includes(groupValue))
-      .sort((a,b)=> a.title.localeCompare(b.title));
 
     const exportStatus = document.getElementById('exportStatusLine');
     const exportOutput = document.getElementById('exportOutput');
     exportOutput.innerHTML = '';
 
-    if(filtered.length === 0){
-      exportStatus.textContent = 'No books match that selection.';
-      return;
+    let filtered;
+    let fileTag;
+    let showSocial = false;
+
+    if(isDateMode){
+      const startRaw = document.getElementById('dateStartInput').value;
+      const endRaw = document.getElementById('dateEndInput').value;
+      if(!startRaw || !endRaw){
+        exportStatus.textContent = 'Pick both a start and end date.';
+        return;
+      }
+      // Date inputs give YYYY-MM-DD; build local-midnight bounds so the
+      // range is inclusive of the whole end day regardless of timezone.
+      const [sy, sm, sd] = startRaw.split('-').map(Number);
+      const [ey, em, ed] = endRaw.split('-').map(Number);
+      const start = new Date(sy, sm - 1, sd);
+      const end = new Date(ey, em - 1, ed, 23, 59, 59, 999);
+      if(start > end){
+        exportStatus.textContent = 'Start date is after end date.';
+        return;
+      }
+      filtered = BOOKS
+        .filter(b => b.date && b.date >= start && b.date <= end)
+        .sort((a,b)=> a.date - b.date || a.title.localeCompare(b.title));
+      fileTag = `${startRaw}_to_${endRaw}`;
+      if(filtered.length === 0){
+        exportStatus.textContent = `No books with a "${DATE_FIELD_NAME}" in that range.`;
+        return;
+      }
+    } else {
+      const groupKey = document.getElementById('groupBySelect').value;
+      const groupValue = document.getElementById('groupValueSelect').value;
+      const getter = groupByField(groupKey);
+      filtered = BOOKS
+        .filter(b => getter(b).includes(groupValue))
+        .sort((a,b)=> a.title.localeCompare(b.title));
+      fileTag = groupValue.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      showSocial = groupKey === 'author';
+      if(filtered.length === 0){
+        exportStatus.textContent = 'No books match that selection.';
+        return;
+      }
     }
 
     this.disabled = true;
@@ -744,7 +866,7 @@
     }
 
     for(let i = 0; i < chunks.length; i++){
-      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, groupKey === 'author');
+      const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, showSocial);
       const card = document.createElement('div');
       card.className = 'export-card';
       const label = document.createElement('div');
@@ -758,7 +880,7 @@
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `arc-export-${groupValue.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${i + 1}.png`;
+          a.download = `arc-export-${fileTag}-${i + 1}.png`;
           a.click();
           URL.revokeObjectURL(url);
         });
