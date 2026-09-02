@@ -871,6 +871,38 @@
       await document.fonts.ready;
     }
 
+    // Text companion: a plain-text list of titles + author social handles
+    // for the same set of books going into the images, so it can be pasted
+    // alongside the graphics (e.g. in a caption or thread).
+    const textLines = filtered.map(b=>{
+      const handle = formatHandle(b.socialMedia);
+      return handle ? `${b.title} \u2014 ${handle}` : b.title;
+    }).join('\n');
+
+    const textCard = document.createElement('div');
+    textCard.className = 'export-card';
+    const textLabel = document.createElement('div');
+    textLabel.className = 'export-label';
+    textLabel.textContent = 'Text companion (titles + social)';
+    const textArea = document.createElement('textarea');
+    textArea.className = 'post-text';
+    textArea.readOnly = true;
+    textArea.value = textLines;
+    const textCopyBtn = document.createElement('button');
+    textCopyBtn.className = 'copy-btn';
+    textCopyBtn.textContent = 'Copy';
+    textCopyBtn.addEventListener('click', function(){
+      navigator.clipboard.writeText(textLines).then(()=>{
+        textCopyBtn.textContent = 'Copied!';
+        textCopyBtn.classList.add('copied');
+        setTimeout(()=>{ textCopyBtn.textContent = 'Copy'; textCopyBtn.classList.remove('copied'); }, 1500);
+      });
+    });
+    textCard.appendChild(textLabel);
+    textCard.appendChild(textArea);
+    textCard.appendChild(textCopyBtn);
+    exportOutput.appendChild(textCard);
+
     for(let i = 0; i < chunks.length; i++){
       const canvas = await renderChunk(chunks[i], i, chunks.length, format, catalogLink, showSocial, isDateMode);
       const card = document.createElement('div');
