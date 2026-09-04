@@ -328,6 +328,7 @@
       batchNo: getField(row, 'Batch No'),
       blurb: getField(row, 'Blurb'),
       amazonLink: getField(row, 'Book Link'),
+      purchaseLink: getField(row, 'Purchase Link'),
       visibility: getField(row, 'Visibility').toLowerCase()
     };
   }
@@ -489,6 +490,11 @@
     return releaseDay <= today;
   }
 
+  function coverLinkFor(book){
+    if(isReleased(book) && book.purchaseLink) return book.purchaseLink;
+    return book.amazonLink;
+  }
+
   function endingSoonBadgeHTML(book){
     if(isReleased(book)) return '';
     const days = daysUntil(book.arcReleaseDate);
@@ -530,7 +536,7 @@
       <span class="genre-tab" style="background:${tabColor}">${primaryGenre}</span>
       <div class="cover-wrap">
         <div class="cover-frame">
-          ${book.amazonLink ? `<a href="${book.amazonLink}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
+          ${coverLinkFor(book) ? `<a href="${coverLinkFor(book)}" target="_blank" rel="noopener noreferrer" aria-label="Request or buy ${book.title}">${coverInner}</a>` : coverInner}
         </div>
         ${endingSoonBadgeHTML(book)}
         ${releasedBadgeHTML(book)}
