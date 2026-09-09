@@ -175,6 +175,60 @@
   }
   .copy-btn:hover{ background:var(--ink); color:var(--card-bg); }
   .copy-btn.copied{ background:var(--stamp-teal); color:#fff; border-color:var(--stamp-teal); }
+  .search-results{
+    margin-top:6px;
+    border:1px solid var(--ink);
+    border-radius:4px;
+    background:#fff;
+    max-height:240px;
+    overflow-y:auto;
+    display:none;
+    position:relative;
+    z-index:5;
+  }
+  .search-results.open{ display:block; }
+  .search-result-item{
+    padding:9px 12px;
+    font-size:13.5px;
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .search-result-item:last-child{ border-bottom:none; }
+  .search-result-item:hover{ background:var(--page-bg); }
+  .search-result-item .hidden-tag{
+    color:var(--stamp-red);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-left:8px;
+  }
+  .checklist-box{
+    border:1px solid var(--ink);
+    border-radius:3px;
+    background:var(--card-bg);
+    padding:9px 10px;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    cursor:pointer;
+    min-height:1.3em;
+  }
+  .checklist-box:hover{ border-color:var(--byzantium); }
+  .checklist-panel{
+    margin-top:6px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    padding:10px;
+    max-height:220px;
+    overflow-y:auto;
+  }
+  .checklist-list{ display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
+  .checklist-item{ display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; }
+  .checklist-item input{ width:auto; }
+  .checklist-add-row{ display:flex; gap:8px; border-top:1px dashed var(--line); padding-top:10px; }
+  .checklist-add-row input{ flex:1; }
   .export-card{
     background:var(--card-bg);
     border:1px solid var(--ink);
@@ -202,16 +256,17 @@
 <div class="wrap">
   <h1>ARC Admin</h1>
   <a class="back-link" href="https://arc.pagesofyue.com">&larr; Back to catalog</a>
+  <span style="color:var(--ink-soft); font-size:11.5px; margin:0 6px;">&middot;</span>
+  <a class="back-link" href="https://docs.google.com/spreadsheets/d/1-GefbDhlV0xIL_i_7t15gcUiJin8Z-0xK7nqkf3Pt-4/edit?gid=0#gid=0" target="_blank" rel="noopener">Open Google Sheet &#8599;</a>
   <div class="private-note">Private tool, not linked from the public site</div>
 
   <div class="panel">
     <h2 class="section-title">Edit a book</h2>
 
-    <div class="field">
-      <label for="editBookSelect">Select book</label>
-      <select id="editBookSelect">
-        <option value="">Loading books...</option>
-      </select>
+    <div class="field" style="position:relative;">
+      <label for="editBookSearch">Search for a book (title or author)</label>
+      <input type="text" id="editBookSearch" placeholder="Start typing a title or author..." autocomplete="off">
+      <div id="editBookResults" class="search-results"></div>
     </div>
 
     <div id="editPanelBody" style="display:none;">
@@ -360,10 +415,10 @@
     3. Set "Signing Mode" to "Unsigned", save, and copy its name.
     4. Paste that name into CLOUDINARY_UPLOAD_PRESET below.
   */
-  const GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwSYd3upflCaGKkROmaou-ga7Yn3VFNjg-8b0oRo66tgna11PlmcS_Tp4NFkOP4Bl5T/exec";
-  const WRITE_SECRET = "hirayamanawari";
+  const GAS_WEBAPP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const WRITE_SECRET = "CHANGE_ME_TO_YOUR_OWN_SECRET";
   const CLOUDINARY_CLOUD_NAME = "p6mmekqg";
-  const CLOUDINARY_UPLOAD_PRESET = "For The Love of Pages";
+  const CLOUDINARY_UPLOAD_PRESET = "PASTE_YOUR_UNSIGNED_UPLOAD_PRESET_NAME_HERE";
 
   // Columns shown in the book editor, in display order. "key" must match
   // your Sheet's column header text (case/spacing don't matter).
@@ -373,8 +428,8 @@
     { key: 'Series', label: 'Series', type: 'text' },
     { key: 'Social Media', label: 'Social Media', type: 'text' },
     { key: 'Genre', label: 'Genre (comma-separated)', type: 'text' },
-    { key: 'Tropes', label: 'Tropes (comma-separated)', type: 'text' },
-    { key: 'Platform', label: 'Platform (comma-separated)', type: 'text' },
+    { key: 'Tropes', label: 'Tropes', type: 'checklist' },
+    { key: 'Platform', label: 'Platform / Source', type: 'checklist' },
     { key: 'Release Date', label: 'Release Date', type: 'text' },
     { key: 'ARC Release Date', label: 'ARC Release Date', type: 'text' },
     { key: 'Batch No', label: 'Batch No', type: 'text' },
@@ -459,7 +514,6 @@
         BOOKS = ALL_BOOKS.filter(b => b.visibility !== 'hide');
         populateBatches();
         populateGroupValues();
-        populateBookSelect();
         document.getElementById('statusLine').textContent = `Loaded ${BOOKS.length} books.`;
         document.getElementById('generateBtn').disabled = false;
         document.getElementById('exportStatusLine').textContent = `Loaded ${BOOKS.length} books.`;
@@ -529,20 +583,73 @@
   // ---------- Book editor ----------
 
   let selectedBookOriginal = null; // { title, author } as loaded, used to find the row to update
+  let currentEditIndex = null;
+  let checklistWraps = {}; // fieldKey -> wrap element, read at save time
 
   function fieldId(key){ return 'edit_' + key.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
 
-  function populateBookSelect(){
-    const select = document.getElementById('editBookSelect');
-    select.innerHTML = '<option value="">-- choose a book --</option>';
-    ALL_BOOKS.forEach((b, i)=>{
-      const opt = document.createElement('option');
-      opt.value = i;
-      const hiddenTag = b.visibility === 'hide' ? ' (hidden)' : '';
-      opt.textContent = `${b.title}${b.author ? ' — ' + b.author : ''}${hiddenTag}`;
-      select.appendChild(opt);
-    });
+  function selectBookByIndex(idx){
+    const book = ALL_BOOKS[idx];
+    if(!book) return;
+    currentEditIndex = idx;
+    selectedBookOriginal = { title: book.title, author: book.author };
+    renderEditForm(book);
+    document.getElementById('editPanelBody').style.display = '';
+    document.getElementById('editStatusLine').textContent = '';
   }
+
+  const editBookSearch = document.getElementById('editBookSearch');
+  const editBookResults = document.getElementById('editBookResults');
+
+  function renderBookResults(matches){
+    editBookResults.innerHTML = '';
+    if(matches.length === 0){
+      editBookResults.classList.remove('open');
+      return;
+    }
+    matches.slice(0, 25).forEach(({ book, idx })=>{
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
+      item.textContent = `${book.title}${book.author ? ' — ' + book.author : ''}`;
+      if(book.visibility === 'hide'){
+        const tag = document.createElement('span');
+        tag.className = 'hidden-tag';
+        tag.textContent = 'Hidden';
+        item.appendChild(tag);
+      }
+      item.addEventListener('click', function(){
+        selectBookByIndex(idx);
+        editBookSearch.value = `${book.title}${book.author ? ' — ' + book.author : ''}`;
+        editBookResults.classList.remove('open');
+      });
+      editBookResults.appendChild(item);
+    });
+    editBookResults.classList.add('open');
+  }
+
+  editBookSearch.addEventListener('input', function(){
+    const q = this.value.trim().toLowerCase();
+    if(q.length === 0){
+      editBookResults.classList.remove('open');
+      return;
+    }
+    const matches = ALL_BOOKS
+      .map((book, idx) => ({ book, idx }))
+      .filter(({ book }) => book.title.toLowerCase().includes(q) || (book.author || '').toLowerCase().includes(q));
+    renderBookResults(matches);
+  });
+
+  editBookSearch.addEventListener('focus', function(){
+    if(this.value.trim().length > 0 && editBookResults.children.length > 0){
+      editBookResults.classList.add('open');
+    }
+  });
+
+  document.addEventListener('click', function(e){
+    if(e.target !== editBookSearch && !editBookResults.contains(e.target)){
+      editBookResults.classList.remove('open');
+    }
+  });
 
   async function uploadCoverFile(file, coverInput, statusEl){
     if(!CLOUDINARY_UPLOAD_PRESET || CLOUDINARY_UPLOAD_PRESET.startsWith('PASTE_YOUR')){
@@ -570,9 +677,131 @@
     }
   }
 
+  // Pulls every distinct value already used for a multi-value column
+  // (e.g. all tropes anyone has ever entered), across every book --
+  // including hidden ones -- so the checklist always reflects the sheet.
+  // Values that only differ by capitalization (e.g. "Amazon" vs "amazon")
+  // are collapsed into one option, keeping whichever exact casing shows
+  // up most often across your existing rows.
+  function collectExistingValues(fieldKey){
+    const variants = new Map(); // lowercase -> Map(exactCasing -> count)
+    ALL_BOOKS.forEach(b=>{
+      splitList(getField(b.raw, fieldKey)).forEach(v=>{
+        const k = v.toLowerCase();
+        if(!variants.has(k)) variants.set(k, new Map());
+        const perCasing = variants.get(k);
+        perCasing.set(v, (perCasing.get(v) || 0) + 1);
+      });
+    });
+    const result = [];
+    variants.forEach(perCasing=>{
+      let best = null, bestCount = -1;
+      perCasing.forEach((count, exact)=>{
+        if(count > bestCount){ best = exact; bestCount = count; }
+      });
+      result.push(best);
+    });
+    return result.sort((a,b)=> a.localeCompare(b, undefined, {sensitivity:'base'}));
+  }
+
+  function renderChecklistField(f, currentValue, wrap){
+    let knownOptions = collectExistingValues(f.key);
+    // Normalize this book's own values to match the canonical casing
+    // already in the list, so a mismatched-case value doesn't create
+    // a second checkbox for what's really the same tag.
+    const selected = new Set();
+    splitList(currentValue).forEach(v=>{
+      const match = knownOptions.find(o => o.toLowerCase() === v.toLowerCase());
+      if(match){
+        selected.add(match);
+      } else {
+        knownOptions.push(v);
+        selected.add(v);
+      }
+    });
+    knownOptions.sort((a,b)=> a.localeCompare(b, undefined, {sensitivity:'base'}));
+
+    const box = document.createElement('div');
+    box.className = 'checklist-box';
+    const summary = document.createElement('div');
+    function updateSummary(){
+      summary.textContent = selected.size ? [...selected].join(', ') : 'None selected — click to choose';
+    }
+    updateSummary();
+    box.appendChild(summary);
+    wrap.appendChild(box);
+
+    const panel = document.createElement('div');
+    panel.className = 'checklist-panel';
+    panel.style.display = 'none';
+
+    const list = document.createElement('div');
+    list.className = 'checklist-list';
+    function renderList(){
+      list.innerHTML = '';
+      knownOptions.forEach(opt=>{
+        const row = document.createElement('label');
+        row.className = 'checklist-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selected.has(opt);
+        cb.addEventListener('change', function(){
+          if(cb.checked) selected.add(opt); else selected.delete(opt);
+          updateSummary();
+        });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        row.appendChild(cb);
+        row.appendChild(span);
+        list.appendChild(row);
+      });
+    }
+    renderList();
+    panel.appendChild(list);
+
+    const addRow = document.createElement('div');
+    addRow.className = 'checklist-add-row';
+    const addInput = document.createElement('input');
+    addInput.type = 'text';
+    addInput.placeholder = `Add a new ${f.label.split(' ')[0].toLowerCase()}...`;
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-secondary';
+    addBtn.textContent = 'Add';
+    function addNewValue(){
+      const val = addInput.value.trim();
+      if(!val) return;
+      if(!knownOptions.some(o => o.toLowerCase() === val.toLowerCase())){
+        knownOptions.push(val);
+        knownOptions.sort((a,b)=> a.localeCompare(b, undefined, {sensitivity:'base'}));
+      }
+      selected.add(val);
+      addInput.value = '';
+      renderList();
+      updateSummary();
+    }
+    addBtn.addEventListener('click', addNewValue);
+    addInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){ e.preventDefault(); addNewValue(); }
+    });
+    addRow.appendChild(addInput);
+    addRow.appendChild(addBtn);
+    panel.appendChild(addRow);
+
+    wrap.appendChild(panel);
+
+    box.addEventListener('click', function(){
+      panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    });
+
+    wrap._getChecklistValue = function(){ return [...selected].join(', '); };
+    checklistWraps[f.key] = wrap;
+  }
+
   function renderEditForm(book){
     const container = document.getElementById('editFieldsContainer');
     container.innerHTML = '';
+    checklistWraps = {};
     const statusEl = document.getElementById('editStatusLine');
 
     EDITABLE_FIELDS.forEach(f=>{
@@ -581,19 +810,23 @@
 
       const label = document.createElement('label');
       label.textContent = f.label;
-      label.setAttribute('for', fieldId(f.key));
       wrap.appendChild(label);
 
       const currentValue = getField(book.raw, f.key);
 
       if(f.type === 'textarea'){
+        label.setAttribute('for', fieldId(f.key));
         const ta = document.createElement('textarea');
         ta.id = fieldId(f.key);
         ta.rows = 4;
         ta.value = currentValue;
         wrap.appendChild(ta);
 
+      } else if(f.type === 'checklist'){
+        renderChecklistField(f, currentValue, wrap);
+
       } else if(f.type === 'cover'){
+        label.setAttribute('for', fieldId(f.key));
         const input = document.createElement('input');
         input.type = 'text';
         input.id = fieldId(f.key);
@@ -634,6 +867,7 @@
         wrap.appendChild(uploadRow);
 
       } else {
+        label.setAttribute('for', fieldId(f.key));
         const input = document.createElement('input');
         input.type = 'text';
         input.id = fieldId(f.key);
@@ -644,21 +878,6 @@
       container.appendChild(wrap);
     });
   }
-
-  document.getElementById('editBookSelect').addEventListener('change', function(){
-    const idx = this.value;
-    const editPanelBody = document.getElementById('editPanelBody');
-    document.getElementById('editStatusLine').textContent = '';
-    if(idx === ''){
-      editPanelBody.style.display = 'none';
-      selectedBookOriginal = null;
-      return;
-    }
-    const book = ALL_BOOKS[Number(idx)];
-    selectedBookOriginal = { title: book.title, author: book.author };
-    renderEditForm(book);
-    editPanelBody.style.display = '';
-  });
 
   document.getElementById('editSaveBtn').addEventListener('click', async function(){
     const statusEl = document.getElementById('editStatusLine');
@@ -675,8 +894,13 @@
 
     const fields = {};
     EDITABLE_FIELDS.forEach(f=>{
-      const el = document.getElementById(fieldId(f.key));
-      fields[f.key] = el ? el.value.trim() : '';
+      if(f.type === 'checklist'){
+        const wrap = checklistWraps[f.key];
+        fields[f.key] = wrap && wrap._getChecklistValue ? wrap._getChecklistValue() : '';
+      } else {
+        const el = document.getElementById(fieldId(f.key));
+        fields[f.key] = el ? el.value.trim() : '';
+      }
     });
 
     saveBtn.disabled = true;
@@ -699,18 +923,15 @@
       if(json.success){
         statusEl.textContent = `Saved (row ${json.row}). It may take a minute for the public site to reflect this.`;
         selectedBookOriginal = { title: fields['Title'], author: fields['Author'] };
-        const select = document.getElementById('editBookSelect');
-        const idx = Number(select.value);
-        if(!isNaN(idx) && ALL_BOOKS[idx]){
-          ALL_BOOKS[idx].title = fields['Title'];
-          ALL_BOOKS[idx].author = fields['Author'];
-          ALL_BOOKS[idx].visibility = (fields['Visibility'] || '').toLowerCase();
+        if(currentEditIndex !== null && ALL_BOOKS[currentEditIndex]){
+          ALL_BOOKS[currentEditIndex].title = fields['Title'];
+          ALL_BOOKS[currentEditIndex].author = fields['Author'];
+          ALL_BOOKS[currentEditIndex].visibility = (fields['Visibility'] || '').toLowerCase();
           EDITABLE_FIELDS.forEach(f=>{
-            const key = Object.keys(ALL_BOOKS[idx].raw).find(k => k.trim().toLowerCase() === f.key.trim().toLowerCase());
-            if(key) ALL_BOOKS[idx].raw[key] = fields[f.key];
+            const key = Object.keys(ALL_BOOKS[currentEditIndex].raw).find(k => k.trim().toLowerCase() === f.key.trim().toLowerCase());
+            if(key) ALL_BOOKS[currentEditIndex].raw[key] = fields[f.key];
           });
-          populateBookSelect();
-          select.value = String(idx);
+          editBookSearch.value = `${fields['Title']}${fields['Author'] ? ' — ' + fields['Author'] : ''}`;
         }
       } else {
         statusEl.textContent = 'Could not save: ' + json.error;
