@@ -50,6 +50,19 @@
     letter-spacing:0.05em;
     margin-bottom:26px;
   }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    text-decoration:none;
+    margin-bottom:10px;
+  }
+  .back-link:hover{ color:var(--byzantium); text-decoration:underline; }
   .panel{
     background:var(--manila);
     border:1px solid var(--manila-dark);
@@ -188,7 +201,26 @@
 <body>
 <div class="wrap">
   <h1>ARC Admin</h1>
+  <a class="back-link" href="https://arc.pagesofyue.com">&larr; Back to catalog</a>
   <div class="private-note">Private tool, not linked from the public site</div>
+
+  <div class="panel">
+    <h2 class="section-title">Edit a book</h2>
+
+    <div class="field">
+      <label for="editBookSelect">Select book</label>
+      <select id="editBookSelect">
+        <option value="">Loading books...</option>
+      </select>
+    </div>
+
+    <div id="editPanelBody" style="display:none;">
+      <div id="editFieldsContainer"></div>
+      <button class="btn" id="editSaveBtn">Save changes to sheet</button>
+      <div class="status-line" id="editStatusLine"></div>
+      <div class="help-line">Changes save directly to your Google Sheet. The public catalog re-reads the sheet on each page load, so updates usually show up within a minute.</div>
+    </div>
+  </div>
 
   <div class="panel">
     <h2 class="section-title">Post generator</h2>
@@ -299,7 +331,62 @@
   // "Release Date"), just change this string to match it exactly.
   const DATE_FIELD_NAME = "Release Date";
 
+  /*
+    BOOK EDITOR SETUP (one-time):
+    This panel writes changes back into your actual Google Sheet, which a
+    plain webpage can't do directly without exposing private credentials.
+    Instead it talks to a small Google Apps Script "web app" attached to
+    your Sheet, which runs under your own Google account.
+
+    1. Open your Google Sheet (the one SHEET_CSV_URL above points to).
+    2. Extensions > Apps Script.
+    3. Delete any starter code and paste in the contents of the
+       "Code.gs" file provided alongside this page.
+    4. In that script, change WRITE_SECRET to any private string you
+       make up -- then paste that same string into WRITE_SECRET below.
+    5. Deploy > New deployment > select type "Web app".
+         - Execute as: Me
+         - Who has access: Anyone
+       Click Deploy, authorize it when prompted, then copy the
+       "Web app URL" it gives you.
+    6. Paste that URL into GAS_WEBAPP_URL below.
+
+    COVER UPLOAD SETUP (one-time, optional but recommended):
+    This lets you upload a cover image file directly from this page,
+    without visiting Cloudinary or Pinterest.
+    1. Log into your Cloudinary account (cloud name is already set
+       below to match your existing image links).
+    2. Settings (gear icon) > Upload > Upload presets > Add upload preset.
+    3. Set "Signing Mode" to "Unsigned", save, and copy its name.
+    4. Paste that name into CLOUDINARY_UPLOAD_PRESET below.
+  */
+  const GAS_WEBAPP_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const WRITE_SECRET = "CHANGE_ME_TO_YOUR_OWN_SECRET";
+  const CLOUDINARY_CLOUD_NAME = "p6mmekqg";
+  const CLOUDINARY_UPLOAD_PRESET = "PASTE_YOUR_UNSIGNED_UPLOAD_PRESET_NAME_HERE";
+
+  // Columns shown in the book editor, in display order. "key" must match
+  // your Sheet's column header text (case/spacing don't matter).
+  const EDITABLE_FIELDS = [
+    { key: 'Title', label: 'Title', type: 'text' },
+    { key: 'Author', label: 'Author', type: 'text' },
+    { key: 'Series', label: 'Series', type: 'text' },
+    { key: 'Social Media', label: 'Social Media', type: 'text' },
+    { key: 'Genre', label: 'Genre (comma-separated)', type: 'text' },
+    { key: 'Tropes', label: 'Tropes (comma-separated)', type: 'text' },
+    { key: 'Platform', label: 'Platform (comma-separated)', type: 'text' },
+    { key: 'Release Date', label: 'Release Date', type: 'text' },
+    { key: 'ARC Release Date', label: 'ARC Release Date', type: 'text' },
+    { key: 'Batch No', label: 'Batch No', type: 'text' },
+    { key: 'Cover URL', label: 'Cover image', type: 'cover' },
+    { key: 'Book Link', label: 'Book Link', type: 'text' },
+    { key: 'Purchase Link', label: 'Purchase Link', type: 'text' },
+    { key: 'Visibility', label: 'Visibility (blank to show, or "hide")', type: 'text' },
+    { key: 'Blurb', label: 'Blurb', type: 'textarea' }
+  ];
+
   let BOOKS = [];
+  let ALL_BOOKS = [];
   let TEMPLATES = [];
 
   function getField(row, name){
@@ -325,7 +412,8 @@
       batchNo: getField(row, 'Batch No'),
       visibility: getField(row, 'Visibility').toLowerCase(),
       dateRaw: rawDate,
-      date: parseSheetDate(rawDate)
+      date: parseSheetDate(rawDate),
+      raw: row // full original row, keyed by sheet header -- used by the book editor
     };
   }
 
@@ -367,9 +455,11 @@
       skipEmptyLines: true,
       complete: function(results){
         const rows = (results.data || []).map(rowToBook);
-        BOOKS = rows.filter(b => b.title && b.visibility !== 'hide');
+        ALL_BOOKS = rows.filter(b => b.title); // includes hidden books, so they can be edited/un-hidden
+        BOOKS = ALL_BOOKS.filter(b => b.visibility !== 'hide');
         populateBatches();
         populateGroupValues();
+        populateBookSelect();
         document.getElementById('statusLine').textContent = `Loaded ${BOOKS.length} books.`;
         document.getElementById('generateBtn').disabled = false;
         document.getElementById('exportStatusLine').textContent = `Loaded ${BOOKS.length} books.`;
@@ -435,6 +525,202 @@
       select.appendChild(opt);
     });
   }
+
+  // ---------- Book editor ----------
+
+  let selectedBookOriginal = null; // { title, author } as loaded, used to find the row to update
+
+  function fieldId(key){ return 'edit_' + key.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+
+  function populateBookSelect(){
+    const select = document.getElementById('editBookSelect');
+    select.innerHTML = '<option value="">-- choose a book --</option>';
+    ALL_BOOKS.forEach((b, i)=>{
+      const opt = document.createElement('option');
+      opt.value = i;
+      const hiddenTag = b.visibility === 'hide' ? ' (hidden)' : '';
+      opt.textContent = `${b.title}${b.author ? ' — ' + b.author : ''}${hiddenTag}`;
+      select.appendChild(opt);
+    });
+  }
+
+  async function uploadCoverFile(file, coverInput, statusEl){
+    if(!CLOUDINARY_UPLOAD_PRESET || CLOUDINARY_UPLOAD_PRESET.startsWith('PASTE_YOUR')){
+      statusEl.textContent = 'Cover upload isn\'t configured yet -- see the setup comment near the top of this file.';
+      return;
+    }
+    statusEl.textContent = 'Uploading cover image...';
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const json = await res.json();
+      if(json.secure_url){
+        coverInput.value = json.secure_url;
+        statusEl.textContent = 'Cover image uploaded. Remember to still click "Save changes to sheet".';
+      } else {
+        statusEl.textContent = 'Upload failed: ' + (json.error ? json.error.message : 'unknown error');
+      }
+    } catch(err){
+      statusEl.textContent = 'Upload failed: ' + err.message;
+    }
+  }
+
+  function renderEditForm(book){
+    const container = document.getElementById('editFieldsContainer');
+    container.innerHTML = '';
+    const statusEl = document.getElementById('editStatusLine');
+
+    EDITABLE_FIELDS.forEach(f=>{
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      label.setAttribute('for', fieldId(f.key));
+      wrap.appendChild(label);
+
+      const currentValue = getField(book.raw, f.key);
+
+      if(f.type === 'textarea'){
+        const ta = document.createElement('textarea');
+        ta.id = fieldId(f.key);
+        ta.rows = 4;
+        ta.value = currentValue;
+        wrap.appendChild(ta);
+
+      } else if(f.type === 'cover'){
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = fieldId(f.key);
+        input.value = currentValue;
+        input.placeholder = 'Paste an image URL, or upload a file below';
+        wrap.appendChild(input);
+
+        if(currentValue){
+          const preview = document.createElement('img');
+          preview.src = currentValue;
+          preview.alt = 'Current cover';
+          preview.style.cssText = 'max-width:90px;display:block;margin-top:8px;border:1px solid var(--line);border-radius:3px;';
+          wrap.appendChild(preview);
+        }
+
+        const uploadRow = document.createElement('div');
+        uploadRow.style.cssText = 'margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+
+        const uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.className = 'btn-secondary';
+        uploadBtn.textContent = 'Upload new cover';
+        uploadBtn.addEventListener('click', function(){
+          const file = fileInput.files[0];
+          if(!file){
+            statusEl.textContent = 'Choose an image file first.';
+            return;
+          }
+          uploadCoverFile(file, input, statusEl);
+        });
+
+        uploadRow.appendChild(fileInput);
+        uploadRow.appendChild(uploadBtn);
+        wrap.appendChild(uploadRow);
+
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = fieldId(f.key);
+        input.value = currentValue;
+        wrap.appendChild(input);
+      }
+
+      container.appendChild(wrap);
+    });
+  }
+
+  document.getElementById('editBookSelect').addEventListener('change', function(){
+    const idx = this.value;
+    const editPanelBody = document.getElementById('editPanelBody');
+    document.getElementById('editStatusLine').textContent = '';
+    if(idx === ''){
+      editPanelBody.style.display = 'none';
+      selectedBookOriginal = null;
+      return;
+    }
+    const book = ALL_BOOKS[Number(idx)];
+    selectedBookOriginal = { title: book.title, author: book.author };
+    renderEditForm(book);
+    editPanelBody.style.display = '';
+  });
+
+  document.getElementById('editSaveBtn').addEventListener('click', async function(){
+    const statusEl = document.getElementById('editStatusLine');
+    const saveBtn = this;
+
+    if(!selectedBookOriginal){
+      statusEl.textContent = 'Select a book first.';
+      return;
+    }
+    if(!GAS_WEBAPP_URL || GAS_WEBAPP_URL.startsWith('PASTE_YOUR')){
+      statusEl.textContent = 'The Google Sheet write endpoint isn\'t configured yet -- see the setup comment near the top of this file.';
+      return;
+    }
+
+    const fields = {};
+    EDITABLE_FIELDS.forEach(f=>{
+      const el = document.getElementById(fieldId(f.key));
+      fields[f.key] = el ? el.value.trim() : '';
+    });
+
+    saveBtn.disabled = true;
+    statusEl.textContent = 'Saving...';
+
+    try {
+      const res = await fetch(GAS_WEBAPP_URL, {
+        method: 'POST',
+        // text/plain avoids a CORS preflight request, which Apps Script
+        // web apps don't handle. The script still parses this as JSON.
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          secret: WRITE_SECRET,
+          originalTitle: selectedBookOriginal.title,
+          originalAuthor: selectedBookOriginal.author,
+          fields: fields
+        })
+      });
+      const json = await res.json();
+      if(json.success){
+        statusEl.textContent = `Saved (row ${json.row}). It may take a minute for the public site to reflect this.`;
+        selectedBookOriginal = { title: fields['Title'], author: fields['Author'] };
+        const select = document.getElementById('editBookSelect');
+        const idx = Number(select.value);
+        if(!isNaN(idx) && ALL_BOOKS[idx]){
+          ALL_BOOKS[idx].title = fields['Title'];
+          ALL_BOOKS[idx].author = fields['Author'];
+          ALL_BOOKS[idx].visibility = (fields['Visibility'] || '').toLowerCase();
+          EDITABLE_FIELDS.forEach(f=>{
+            const key = Object.keys(ALL_BOOKS[idx].raw).find(k => k.trim().toLowerCase() === f.key.trim().toLowerCase());
+            if(key) ALL_BOOKS[idx].raw[key] = fields[f.key];
+          });
+          populateBookSelect();
+          select.value = String(idx);
+        }
+      } else {
+        statusEl.textContent = 'Could not save: ' + json.error;
+      }
+    } catch(err){
+      statusEl.textContent = 'Could not save: ' + err.message;
+    }
+
+    saveBtn.disabled = false;
+  });
 
   function buildPages(catalogLink, lines, closing){
     const baseHeader = `New ARC sign-ups have been added to the catalog (${catalogLink})`;
