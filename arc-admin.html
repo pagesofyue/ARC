@@ -229,6 +229,13 @@
   .checklist-item input{ width:auto; }
   .checklist-add-row{ display:flex; gap:8px; border-top:1px dashed var(--line); padding-top:10px; }
   .checklist-add-row input{ flex:1; }
+  .ms-panel{ margin-top:6px; border:1px solid var(--line); border-radius:4px; background:#fff; }
+  .ms-toolbar{ display:flex; gap:6px; padding:8px; border-bottom:1px dashed var(--line); align-items:center; }
+  .ms-toolbar input[type="text"]{ flex:1; min-width:0; padding:6px 8px; font-size:13px; }
+  .ms-toolbar .btn-secondary{ padding:6px 10px; font-size:11px; white-space:nowrap; }
+  .ms-list{ max-height:220px; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
+  .ms-list .checklist-item{ text-transform:none; letter-spacing:normal; opacity:1; margin:0; font-family:'Inter', sans-serif; }
+  .ms-empty{ font-size:12.5px; color:var(--ink-soft); padding:2px 0; }
   .export-card{
     background:var(--card-bg);
     border:1px solid var(--ink);
@@ -290,10 +297,8 @@
 
     <div class="field-row">
       <div class="field">
-        <label for="batchSelect">Batch</label>
-        <select id="batchSelect">
-          <option value="">Loading batches...</option>
-        </select>
+        <label>Batches (select one or more)</label>
+        <div id="batchMulti"></div>
       </div>
       <div class="field">
         <label for="catalogLink">Catalog link</label>
@@ -333,10 +338,8 @@
         </select>
       </div>
       <div class="field">
-        <label for="groupValueSelect">Value</label>
-        <select id="groupValueSelect">
-          <option value="">Loading...</option>
-        </select>
+        <label>Values (select one or more)</label>
+        <div id="groupValueMulti"></div>
       </div>
     </div>
 
@@ -443,6 +446,107 @@
   let BOOKS = [];
   let ALL_BOOKS = [];
   let TEMPLATES = [];
+
+  // Reusable multi-select dropdown (checkboxes + search + Select all / Clear).
+  function createMultiSelect(root, opts){
+    opts = opts || {};
+    const noun = opts.noun || 'item';
+    let options = [];
+    const selected = new Set();
+
+    const box = document.createElement('div');
+    box.className = 'checklist-box';
+    const summary = document.createElement('div');
+    summary.textContent = 'Loading...';
+    box.appendChild(summary);
+
+    const panel = document.createElement('div');
+    panel.className = 'ms-panel';
+    panel.style.display = 'none';
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'ms-toolbar';
+    const search = document.createElement('input');
+    search.type = 'text';
+    search.placeholder = 'Filter...';
+    const allBtn = document.createElement('button');
+    allBtn.type = 'button'; allBtn.className = 'btn-secondary'; allBtn.textContent = 'Select all';
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button'; clearBtn.className = 'btn-secondary'; clearBtn.textContent = 'Clear';
+    toolbar.appendChild(search); toolbar.appendChild(allBtn); toolbar.appendChild(clearBtn);
+
+    const list = document.createElement('div');
+    list.className = 'ms-list';
+    panel.appendChild(toolbar); panel.appendChild(list);
+    root.appendChild(box); root.appendChild(panel);
+
+    function visibleOptions(){
+      const q = search.value.trim().toLowerCase();
+      return q ? options.filter(o => o.toLowerCase().includes(q)) : options;
+    }
+    function updateSummary(){
+      if(options.length === 0){ summary.textContent = 'Nothing found in your sheet'; return; }
+      const sel = options.filter(o => selected.has(o));
+      if(sel.length === 0) summary.textContent = 'None selected — click to choose';
+      else if(sel.length <= 3) summary.textContent = sel.join(', ');
+      else summary.textContent = `${sel.length} ${noun}s selected`;
+    }
+    function renderList(){
+      list.innerHTML = '';
+      const vis = visibleOptions();
+      if(vis.length === 0){
+        const empty = document.createElement('div');
+        empty.className = 'ms-empty';
+        empty.textContent = 'No matches';
+        list.appendChild(empty);
+        return;
+      }
+      vis.forEach(opt=>{
+        const row = document.createElement('label');
+        row.className = 'checklist-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = selected.has(opt);
+        cb.addEventListener('change', function(){
+          if(cb.checked) selected.add(opt); else selected.delete(opt);
+          updateSummary();
+        });
+        const span = document.createElement('span');
+        span.textContent = opt;
+        row.appendChild(cb); row.appendChild(span);
+        list.appendChild(row);
+      });
+    }
+
+    box.addEventListener('click', function(){
+      panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    });
+    search.addEventListener('input', renderList);
+    allBtn.addEventListener('click', function(){
+      visibleOptions().forEach(o => selected.add(o));
+      renderList(); updateSummary();
+    });
+    clearBtn.addEventListener('click', function(){
+      selected.clear();
+      renderList(); updateSummary();
+    });
+    document.addEventListener('click', function(e){
+      if(!root.contains(e.target)) panel.style.display = 'none';
+    });
+
+    return {
+      setOptions: function(values){
+        options = values.slice();
+        selected.clear();
+        search.value = '';
+        renderList(); updateSummary();
+      },
+      getSelected: function(){ return options.filter(o => selected.has(o)); }
+    };
+  }
+
+  const batchMulti = createMultiSelect(document.getElementById('batchMulti'), { noun: 'batch' });
+  const groupValueMulti = createMultiSelect(document.getElementById('groupValueMulti'), { noun: 'value' });
 
   function getField(row, name){
     const targetKey = name.trim().toLowerCase();
@@ -565,19 +669,9 @@
   });
 
   function populateBatches(){
-    const select = document.getElementById('batchSelect');
-    select.innerHTML = '';
     const batches = [...new Set(BOOKS.map(b=>b.batchNo).filter(Boolean))]
       .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
-    if(batches.length === 0){
-      select.innerHTML = '<option value="">No batches found in your sheet</option>';
-      return;
-    }
-    batches.forEach(b=>{
-      const opt = document.createElement('option');
-      opt.value = b; opt.textContent = b;
-      select.appendChild(opt);
-    });
+    batchMulti.setOptions(batches);
   }
 
   // ---------- Book editor ----------
@@ -1021,13 +1115,19 @@
   }
 
   document.getElementById('generateBtn').addEventListener('click', function(){
-    const batch = document.getElementById('batchSelect').value;
+    const batches = batchMulti.getSelected();
     const catalogLink = document.getElementById('catalogLink').value.trim();
     const closing = document.getElementById('closingText').value.trim();
 
-    const batchBooks = BOOKS.filter(b => b.batchNo === batch);
+    if(batches.length === 0){
+      document.getElementById('statusLine').textContent = 'Select at least one batch.';
+      document.getElementById('output').innerHTML = '';
+      return;
+    }
+    // Books are listed batch by batch, in the order the batches sort.
+    const batchBooks = batches.flatMap(bn => BOOKS.filter(b => b.batchNo === bn));
     if(batchBooks.length === 0){
-      document.getElementById('statusLine').textContent = 'No books found for that batch.';
+      document.getElementById('statusLine').textContent = 'No books found for the selected batches.';
       document.getElementById('output').innerHTML = '';
       return;
     }
@@ -1039,7 +1139,7 @@
 
     const pages = buildPages(catalogLink, lines, closing);
     renderOutput(pages);
-    document.getElementById('statusLine').textContent = `Generated ${pages.length} post${pages.length > 1 ? 's' : ''} for ${batchBooks.length} book${batchBooks.length > 1 ? 's' : ''} in batch "${batch}".`;
+    document.getElementById('statusLine').textContent = `Generated ${pages.length} post${pages.length > 1 ? 's' : ''} for ${batchBooks.length} book${batchBooks.length > 1 ? 's' : ''} in ${batches.length > 1 ? 'batches' : 'batch'} ${batches.map(b => '"' + b + '"').join(', ')}.`;
   });
 
   function groupByField(key){
@@ -1054,17 +1154,7 @@
     const getter = groupByField(key);
     const values = [...new Set(BOOKS.flatMap(getter))].filter(Boolean)
       .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
-    const select = document.getElementById('groupValueSelect');
-    select.innerHTML = '';
-    if(values.length === 0){
-      select.innerHTML = '<option value="">No values found</option>';
-      return;
-    }
-    values.forEach(v=>{
-      const opt = document.createElement('option');
-      opt.value = v; opt.textContent = v;
-      select.appendChild(opt);
-    });
+    groupValueMulti.setOptions(values);
   }
 
   document.getElementById('groupBySelect').addEventListener('change', populateGroupValues);
@@ -1352,12 +1442,19 @@
       }
     } else {
       const groupKey = document.getElementById('groupBySelect').value;
-      const groupValue = document.getElementById('groupValueSelect').value;
+      const groupValues = groupValueMulti.getSelected();
+      if(groupValues.length === 0){
+        exportStatus.textContent = 'Select at least one value.';
+        return;
+      }
       const getter = groupByField(groupKey);
+      // A book is included if it matches ANY selected value (each book once).
       filtered = BOOKS
-        .filter(b => getter(b).includes(groupValue))
+        .filter(b => getter(b).some(v => groupValues.includes(v)))
         .sort((a,b)=> a.title.localeCompare(b.title));
-      fileTag = groupValue.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+      fileTag = (groupValues.length > 3
+        ? groupValues.length + '-selections'
+        : groupValues.join('-')).replace(/[^a-z0-9]+/gi, '-').toLowerCase();
       showSocial = groupKey === 'author';
       if(filtered.length === 0){
         exportStatus.textContent = 'No books match that selection.';
