@@ -284,6 +284,44 @@
     color:var(--ink-soft);
     margin-bottom:10px;
   }
+  /* ---------- Add a book: two-column layout ---------- */
+  #modal-add .tool-modal{ max-width:900px; background:#FFF4DB; border-color:#E3D3A8; }
+  #modal-add .tool-head, #modal-add .tool-foot{ border-color:#E3D3A8; }
+  #modal-add .tool-head h2{ font-size:1.35rem; }
+  .add-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 28px; align-items:start; }
+  .add-col .field{ margin-bottom:14px; }
+  .add-row{ display:grid; gap:12px; margin-bottom:14px; }
+  .add-row .field{ margin-bottom:0; }
+  .add-row.r-even{ grid-template-columns:1fr 1fr; }
+  .add-row.r-series{ grid-template-columns:minmax(0,1fr) 120px; }
+  .add-row.r-batch{ grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); }
+  #modal-add input[type="text"], #modal-add select, #modal-add textarea{ border-color:#2b3350; background:#FAF8F2; }
+  #modal-add input:focus, #modal-add select:focus, #modal-add textarea:focus{ outline:2px solid rgba(112,41,99,0.35); outline-offset:0; }
+  .trope-entry{ display:flex; gap:8px; }
+  .trope-entry input{ flex:1; min-width:0; }
+  .trope-entry .btn{ margin-top:0; border-radius:6px; padding:9px 16px; font-size:11.5px; }
+  .trope-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .trope-chip{ display:inline-flex; align-items:center; gap:7px; background:var(--byzantium); color:#fff; border-radius:14px; padding:5px 10px 5px 12px; font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; }
+  .trope-chip button{ background:none; border:none; color:#fff; cursor:pointer; padding:0; font-size:13px; line-height:1; opacity:.85; }
+  .trope-chip button:hover{ opacity:1; }
+  .trope-sug-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:8px; }
+  .trope-sug-row .used-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); }
+  .trope-sug{ background:transparent; border:1px dashed var(--byzantium); color:var(--byzantium); border-radius:12px; padding:3px 10px; font-family:'Inter', sans-serif; font-size:11.5px; cursor:pointer; }
+  .trope-sug:hover{ background:var(--byzantium); color:#fff; }
+  .cover-row{ display:flex; gap:12px; align-items:flex-start; margin-bottom:14px; }
+  .cover-drop{ flex:0 0 62px; height:116px; border:1.5px dashed var(--byzantium); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--byzantium); cursor:pointer; background:#FAF8F2 center/cover no-repeat; text-align:center; opacity:1 !important; margin:0; }
+  .cover-drop:hover{ background-color:rgba(112,41,99,0.07); }
+  .cover-drop .plus{ font-size:26px; line-height:1; font-weight:300; }
+  .cover-drop .up{ font-family:'IBM Plex Mono', monospace; font-size:9px; letter-spacing:0.08em; text-transform:uppercase; }
+  .cover-drop.has-img .plus, .cover-drop.has-img .up{ display:none; }
+  .cover-row .cover-url{ flex:1; min-width:0; }
+  #modal-add textarea.blurb-box{ font-family:'Fraunces', Georgia, serif; font-size:14px; line-height:1.55; min-height:300px; resize:vertical; }
+  .add-links{ border-top:1px dashed var(--manila-dark); margin-top:14px; padding-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .add-links .field{ margin-bottom:0; }
+  @media (max-width:720px){
+    .add-grid{ grid-template-columns:1fr; }
+    .add-links{ grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
@@ -1166,7 +1204,161 @@
 
   function renderAddForm(){
     addChecklistWraps = {};
-    renderFieldsForm(document.getElementById('addFieldsContainer'), function(){ return ''; }, 'add', addChecklistWraps, document.getElementById('addStatusLine'));
+    const c = document.getElementById('addFieldsContainer');
+    const statusEl = document.getElementById('addStatusLine');
+    c.innerHTML = `
+      <div class="add-grid">
+        <div class="add-col">
+          <div class="field"><label for="add_title">Title</label><input type="text" id="add_title" autocomplete="off"></div>
+          <div class="add-row r-even">
+            <div class="field"><label for="add_author">Author</label><input type="text" id="add_author"></div>
+            <div class="field"><label for="add_social-media">Social Media</label><input type="text" id="add_social-media" placeholder="@handle"></div>
+          </div>
+          <div class="add-row r-series">
+            <div class="field"><label for="add_series">Series</label><input type="text" id="add_series"></div>
+            <div class="field"><label for="add_series-index">Series Index</label><input type="text" id="add_series-index" inputmode="numeric"></div>
+          </div>
+          <div class="field"><label for="add_platform">Platform</label><select id="add_platform"></select></div>
+          <div class="field"><label for="add_genre">Genre</label><input type="text" id="add_genre" placeholder="Comma-separated"></div>
+          <div class="field">
+            <label for="add_tropes-input">Tropes</label>
+            <div class="trope-entry">
+              <input type="text" id="add_tropes-input" placeholder="Type a trope, press Enter" autocomplete="off">
+              <button type="button" class="btn" id="add_tropes-add">Add</button>
+            </div>
+            <div class="trope-chips" id="add_tropes-chips"></div>
+            <div class="trope-sug-row" id="add_tropes-sug"></div>
+          </div>
+          <div class="add-row r-even">
+            <div class="field"><label for="add_release-date">Release Date</label><input type="text" id="add_release-date" placeholder="YYYY-MM-DD"></div>
+            <div class="field"><label for="add_arc-release-date">ARC Release Date</label><input type="text" id="add_arc-release-date" placeholder="YYYY-MM-DD"></div>
+          </div>
+          <div class="add-row r-batch">
+            <div class="field"><label for="add_batch-no">Batch No</label><select id="add_batch-no"></select></div>
+            <div class="field"><label for="add_visibility">Visibility</label>
+              <select id="add_visibility"><option value="">Show</option><option value="hide">Hide</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="add-col">
+          <label for="add_cover-url">Cover Image</label>
+          <div class="cover-row">
+            <label class="cover-drop" id="add_cover-drop" for="add_cover-file" title="Upload a cover image">
+              <span class="plus">+</span><span class="up">Upload</span>
+            </label>
+            <input type="file" id="add_cover-file" accept="image/*" hidden>
+            <input type="text" id="add_cover-url" class="cover-url" placeholder="...or paste an image link">
+          </div>
+          <div class="field"><label for="add_blurb">Blurb</label><textarea id="add_blurb" class="blurb-box"></textarea></div>
+          <div class="add-links">
+            <div class="field"><label for="add_book-link">Book Link</label><input type="text" id="add_book-link" placeholder="ARC sign-up link"></div>
+            <div class="field"><label for="add_purchase-link">Purchase Link</label><input type="text" id="add_purchase-link" placeholder="Amazon link"></div>
+          </div>
+        </div>
+      </div>`;
+
+    // Platform + Batch No: dropdowns of what's already in the sheet,
+    // plus an option to type a brand-new value.
+    function setupSelect(selId, values, noun){
+      const sel = document.getElementById(selId);
+      sel.innerHTML = '';
+      const blank = document.createElement('option'); blank.value = ''; blank.textContent = 'Choose...';
+      sel.appendChild(blank);
+      values.forEach(v=>{ const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+      const nw = document.createElement('option'); nw.value = '__new__'; nw.textContent = '+ Add new ' + noun + '...';
+      sel.appendChild(nw);
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = 'New ' + noun; inp.style.cssText = 'display:none;margin-top:8px;';
+      sel.parentNode.appendChild(inp);
+      sel.addEventListener('change', function(){
+        const isNew = sel.value === '__new__';
+        inp.style.display = isNew ? '' : 'none';
+        if(isNew) inp.focus();
+      });
+      return { _getValue: function(){ return sel.value === '__new__' ? inp.value.trim() : sel.value; } };
+    }
+    addChecklistWraps['Platform'] = setupSelect('add_platform', collectExistingValues('Platform'), 'platform');
+    const batchVals = collectExistingValues('Batch No').sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
+    addChecklistWraps['Batch No'] = setupSelect('add_batch-no', batchVals, 'batch');
+
+    // Tropes: chips + "used before" suggestions
+    const known = collectExistingValues('Tropes');
+    const freq = new Map();
+    ALL_BOOKS.forEach(b=> splitList(getField(b.raw, 'Tropes')).forEach(v=>{
+      const k = v.toLowerCase(); freq.set(k, (freq.get(k) || 0) + 1);
+    }));
+    const byPopularity = known.slice().sort((a,b)=> (freq.get(b.toLowerCase())||0) - (freq.get(a.toLowerCase())||0));
+    const chosen = [];
+    const tInput = document.getElementById('add_tropes-input');
+    const chipsEl = document.getElementById('add_tropes-chips');
+    const sugEl = document.getElementById('add_tropes-sug');
+
+    function renderTropes(){
+      chipsEl.innerHTML = '';
+      chosen.forEach((t, i)=>{
+        const chip = document.createElement('span'); chip.className = 'trope-chip';
+        chip.appendChild(document.createTextNode(t));
+        const x = document.createElement('button'); x.type = 'button'; x.setAttribute('aria-label', 'Remove ' + t); x.innerHTML = '&times;';
+        x.addEventListener('click', function(){ chosen.splice(i, 1); renderTropes(); });
+        chip.appendChild(x); chipsEl.appendChild(chip);
+      });
+      sugEl.innerHTML = '';
+      const sugs = byPopularity.filter(t => !chosen.some(c => c.toLowerCase() === t.toLowerCase())).slice(0, 8);
+      if(sugs.length){
+        const lab = document.createElement('span'); lab.className = 'used-label'; lab.textContent = 'Used before:';
+        sugEl.appendChild(lab);
+        sugs.forEach(t=>{
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'trope-sug'; b.textContent = '+ ' + t;
+          b.addEventListener('click', function(){ addTrope(t); });
+          sugEl.appendChild(b);
+        });
+      }
+    }
+    function addTrope(raw){
+      splitList(raw).forEach(v=>{
+        const match = known.find(k => k.toLowerCase() === v.toLowerCase());
+        const val = match || v;
+        if(!chosen.some(c => c.toLowerCase() === val.toLowerCase())) chosen.push(val);
+      });
+      renderTropes();
+    }
+    function submitTrope(){ if(tInput.value.trim()){ addTrope(tInput.value); tInput.value = ''; } tInput.focus(); }
+    document.getElementById('add_tropes-add').addEventListener('click', submitTrope);
+    tInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); submitTrope(); } });
+    addChecklistWraps['Tropes'] = { _getValue: function(){
+      // include anything typed but not yet added
+      if(tInput.value.trim()){ addTrope(tInput.value); tInput.value = ''; }
+      return chosen.join(', ');
+    } };
+    renderTropes();
+
+    // Cover: upload (shows a thumbnail) or paste a link
+    const drop = document.getElementById('add_cover-drop');
+    const fileIn = document.getElementById('add_cover-file');
+    const urlIn = document.getElementById('add_cover-url');
+    function setPreview(url){
+      if(url){ drop.style.backgroundImage = 'url("' + url.replace(/"/g, '%22') + '")'; drop.classList.add('has-img'); }
+      else { drop.style.backgroundImage = ''; drop.classList.remove('has-img'); }
+    }
+    fileIn.addEventListener('change', function(){
+      const file = fileIn.files[0];
+      if(!file) return;
+      setPreview(URL.createObjectURL(file));
+      uploadCoverFile(file, urlIn, statusEl).then(function(){ if(urlIn.value) setPreview(urlIn.value); });
+    });
+    urlIn.addEventListener('change', function(){ setPreview(urlIn.value.trim()); });
+  }
+
+  // Reads the Add form (the edit form uses collectFormFields instead).
+  function collectAddFields(){
+    const fields = {};
+    EDITABLE_FIELDS.forEach(f=>{
+      const custom = addChecklistWraps[f.key];
+      if(custom && custom._getValue){ fields[f.key] = custom._getValue(); return; }
+      const el = document.getElementById(fieldId(f.key, 'add'));
+      fields[f.key] = el ? el.value.trim() : '';
+    });
+    return fields;
   }
 
   // Re-reads books after an add/edit so every dropdown reflects the change.
@@ -1228,7 +1420,7 @@
       statusEl.textContent = 'The Google Sheet write endpoint isn\'t configured yet -- see the setup comment near the top of this file.';
       return;
     }
-    const fields = collectFormFields('add', addChecklistWraps);
+    const fields = collectAddFields();
     if(!fields['Title']){
       statusEl.textContent = 'Enter a title first.';
       return;

@@ -171,7 +171,7 @@
 
 <header class="masthead">
   <div class="eyebrow">reader recommended &middot; indie focused</div>
-  <h1 class="title">For The Love of Pages</h1>
+  <h1 class="title" id="siteTitle" style="-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;">For The Love of Pages</h1>
   <p class="subtitle" style="font-size: 88%;">
     <span class="subtitle-companion">
       <i>This is a companion to my review site,
@@ -912,6 +912,21 @@
       this.style.display = 'none';
     }
   });
+</script>
+
+<script>
+  // Hidden shortcut to the admin page: click/tap the site title 5 times quickly.
+  (function(){
+    var title = document.getElementById('siteTitle');
+    if(!title) return;
+    var clicks = 0, timer = null;
+    title.addEventListener('click', function(){
+      clicks++;
+      clearTimeout(timer);
+      timer = setTimeout(function(){ clicks = 0; }, 1500);
+      if(clicks >= 5){ clicks = 0; window.location.href = 'arc-admin.html'; }
+    });
+  })();
 </script>
 
 </body>
