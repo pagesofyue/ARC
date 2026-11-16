@@ -285,12 +285,19 @@
     margin-bottom:10px;
   }
   /* ---------- Add a book: two-column layout ---------- */
-  #modal-add .tool-modal{ max-width:900px; background:#FFF4DB; border-color:#E3D3A8; }
+  #modal-add .tool-modal{ max-width:980px; max-height:97vh; background:#FFF4DB; border-color:#E3D3A8; }
   #modal-add .tool-head, #modal-add .tool-foot{ border-color:#E3D3A8; }
   #modal-add .tool-head h2{ font-size:1.35rem; }
   .add-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 28px; align-items:start; }
-  .add-col .field{ margin-bottom:14px; }
-  .add-row{ display:grid; gap:12px; margin-bottom:14px; }
+  #modal-add .tool-head{ padding:10px 22px; }
+  #modal-add .tool-body{ padding:12px 22px 10px; }
+  #modal-add .tool-foot{ padding:10px 22px; }
+  #modal-add .tool-foot .status-line{ margin-top:6px; }
+  #modal-add .tool-body > .help-line{ display:none; }
+  #modal-add label{ margin-bottom:4px; }
+  #modal-add select, #modal-add input[type="text"]{ padding:8px 10px; }
+  .add-col .field{ margin-bottom:10px; }
+  .add-row{ display:grid; gap:12px; margin-bottom:10px; }
   .add-row .field{ margin-bottom:0; }
   .add-row.r-even{ grid-template-columns:1fr 1fr; }
   .add-row.r-series{ grid-template-columns:minmax(0,1fr) 120px; }
@@ -308,19 +315,24 @@
   .trope-sug-row .used-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--ink-soft); }
   .trope-sug{ background:transparent; border:1px dashed var(--byzantium); color:var(--byzantium); border-radius:12px; padding:3px 10px; font-family:'Inter', sans-serif; font-size:11.5px; cursor:pointer; }
   .trope-sug:hover{ background:var(--byzantium); color:#fff; }
-  .cover-row{ display:flex; gap:12px; align-items:flex-start; margin-bottom:14px; }
-  .cover-drop{ flex:0 0 62px; height:116px; border:1.5px dashed var(--byzantium); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--byzantium); cursor:pointer; background:#FAF8F2 center/cover no-repeat; text-align:center; opacity:1 !important; margin:0; }
+  .cover-block{ display:flex; gap:14px; align-items:flex-start; margin-bottom:10px; }
+  .cover-left{ flex:0 0 200px; }
+  .cover-left > label:first-child{ margin-bottom:6px; }
+  .cover-side{ flex:1; min-width:0; }
+  .cover-side .field{ margin-bottom:10px; }
+  .cover-drop{ width:200px; height:300px; border:1.5px dashed var(--byzantium); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--byzantium); cursor:pointer; background:#FAF8F2 center/cover no-repeat; text-align:center; opacity:1 !important; margin:0; }
   .cover-drop:hover{ background-color:rgba(112,41,99,0.07); }
-  .cover-drop .plus{ font-size:26px; line-height:1; font-weight:300; }
-  .cover-drop .up{ font-family:'IBM Plex Mono', monospace; font-size:9px; letter-spacing:0.08em; text-transform:uppercase; }
+  .cover-drop .plus{ font-size:38px; line-height:1; font-weight:300; }
+  .cover-drop .up{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; }
   .cover-drop.has-img .plus, .cover-drop.has-img .up{ display:none; }
-  .cover-row .cover-url{ flex:1; min-width:0; }
-  #modal-add textarea.blurb-box{ font-family:'Fraunces', Georgia, serif; font-size:14px; line-height:1.55; min-height:300px; resize:vertical; }
-  .add-links{ border-top:1px dashed var(--manila-dark); margin-top:14px; padding-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .add-links .field{ margin-bottom:0; }
+  .add-right{ display:flex; flex-direction:column; align-self:stretch; }
+  .blurb-field{ flex:1; display:flex; flex-direction:column; margin-bottom:0 !important; min-height:140px; }
+  #modal-add textarea.blurb-box{ font-family:'Fraunces', Georgia, serif; font-size:14px; line-height:1.5; flex:1; min-height:110px; resize:none; }
   @media (max-width:720px){
     .add-grid{ grid-template-columns:1fr; }
-    .add-links{ grid-template-columns:1fr; }
+    .cover-block{ flex-wrap:wrap; }
+    .add-right{ align-self:auto; }
+    .blurb-field{ min-height:200px; }
   }
 </style>
 </head>
@@ -1218,8 +1230,10 @@
             <div class="field"><label for="add_series">Series</label><input type="text" id="add_series"></div>
             <div class="field"><label for="add_series-index">Series Index</label><input type="text" id="add_series-index" inputmode="numeric"></div>
           </div>
-          <div class="field"><label for="add_platform">Platform</label><select id="add_platform"></select></div>
-          <div class="field"><label for="add_genre">Genre</label><input type="text" id="add_genre" placeholder="Comma-separated"></div>
+          <div class="add-row r-even">
+            <div class="field"><label for="add_platform">Platform</label><select id="add_platform"></select></div>
+            <div class="field"><label for="add_genre">Genre</label><input type="text" id="add_genre" placeholder="Comma-separated"></div>
+          </div>
           <div class="field">
             <label for="add_tropes-input">Tropes</label>
             <div class="trope-entry">
@@ -1240,20 +1254,22 @@
             </div>
           </div>
         </div>
-        <div class="add-col">
-          <label for="add_cover-url">Cover Image</label>
-          <div class="cover-row">
-            <label class="cover-drop" id="add_cover-drop" for="add_cover-file" title="Upload a cover image">
-              <span class="plus">+</span><span class="up">Upload</span>
-            </label>
-            <input type="file" id="add_cover-file" accept="image/*" hidden>
-            <input type="text" id="add_cover-url" class="cover-url" placeholder="...or paste an image link">
+        <div class="add-col add-right">
+          <div class="cover-block">
+            <div class="cover-left">
+              <label for="add_cover-file">Cover Image</label>
+              <label class="cover-drop" id="add_cover-drop" for="add_cover-file" title="Upload a cover image">
+                <span class="plus">+</span><span class="up">Upload</span>
+              </label>
+              <input type="file" id="add_cover-file" accept="image/*" hidden>
+            </div>
+            <div class="cover-side">
+              <div class="field"><label for="add_cover-url">Image Link</label><input type="text" id="add_cover-url" placeholder="...or paste an image link"></div>
+              <div class="field"><label for="add_book-link">Book Link</label><input type="text" id="add_book-link" placeholder="ARC sign-up link"></div>
+              <div class="field"><label for="add_purchase-link">Purchase Link</label><input type="text" id="add_purchase-link" placeholder="Amazon link"></div>
+            </div>
           </div>
-          <div class="field"><label for="add_blurb">Blurb</label><textarea id="add_blurb" class="blurb-box"></textarea></div>
-          <div class="add-links">
-            <div class="field"><label for="add_book-link">Book Link</label><input type="text" id="add_book-link" placeholder="ARC sign-up link"></div>
-            <div class="field"><label for="add_purchase-link">Purchase Link</label><input type="text" id="add_purchase-link" placeholder="Amazon link"></div>
-          </div>
+          <div class="field blurb-field"><label for="add_blurb">Blurb</label><textarea id="add_blurb" class="blurb-box"></textarea></div>
         </div>
       </div>`;
 
@@ -1303,7 +1319,7 @@
         chip.appendChild(x); chipsEl.appendChild(chip);
       });
       sugEl.innerHTML = '';
-      const sugs = byPopularity.filter(t => !chosen.some(c => c.toLowerCase() === t.toLowerCase())).slice(0, 8);
+      const sugs = byPopularity.filter(t => !chosen.some(c => c.toLowerCase() === t.toLowerCase())).slice(0, 6);
       if(sugs.length){
         const lab = document.createElement('span'); lab.className = 'used-label'; lab.textContent = 'Used before:';
         sugEl.appendChild(lab);
