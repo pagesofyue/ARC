@@ -333,12 +333,24 @@
     return actualKey ? (row[actualKey] || '').trim() : '';
   }
 
+  // Shows "Love & Legacy, #1" from the Series and Series Index columns.
+  // If Series Index is empty, the Series text is shown exactly as typed
+  // (so old-style cells like "Love & Legacy (Book #1)" keep working).
+  function formatSeries(series, index){
+    series = (series || '').trim();
+    index = (index || '').trim();
+    if(!series) return '';
+    if(!index) return series;
+    const num = index.match(/\d+(?:\.\d+)?/);
+    return series + ', ' + (num ? '#' + num[0] : index);
+  }
+
   function rowToBook(row){
     return {
       title: getField(row, 'Title'),
       author: getField(row, 'Author'),
       socialMedia: getField(row, 'Social Media'),
-      series: getField(row, 'Series'),
+      series: formatSeries(getField(row, 'Series'), getField(row, 'Series Index')),
       cover: getField(row, 'Cover URL'),
       genres: splitList(getField(row, 'Genre')),
       tropes: splitList(getField(row, 'Tropes')),

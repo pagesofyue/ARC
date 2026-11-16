@@ -235,6 +235,33 @@
   .ms-toolbar .btn-secondary{ padding:6px 10px; font-size:11px; white-space:nowrap; }
   .ms-list{ max-height:220px; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:5px; }
   .ms-list .checklist-item{ text-transform:none; letter-spacing:normal; opacity:1; margin:0; font-family:'Inter', sans-serif; }
+  .filter-row, .sort-row{ display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; }
+  .filter-row > select{ width:140px; flex:0 0 140px; }
+  .filter-row .ms-wrap{ flex:1 1 220px; min-width:200px; }
+  .sort-row > .sort-label{ flex:0 0 64px; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); padding-top:11px; }
+  .sort-row > select{ width:auto; flex:1 1 150px; }
+  .filter-remove{ flex:0 0 auto; padding:9px 12px; }
+  .filter-summary{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink-soft); margin:12px 0; }
+  .tool-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:16px; margin-top:8px; }
+  .tool-tile{ background:var(--manila); border:1px solid var(--manila-dark); border-radius:12px; padding:26px 10px 20px; display:flex; flex-direction:column; align-items:center; gap:14px; cursor:pointer; color:var(--byzantium); font:inherit; transition:transform .12s, border-color .12s, box-shadow .12s; }
+  .tool-tile:hover, .tool-tile:focus-visible{ transform:translateY(-3px); border-color:var(--byzantium); box-shadow:0 8px 20px rgba(28,37,65,0.14); outline:none; }
+  .tool-icon{ position:relative; display:inline-flex; }
+  .tool-label{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; letter-spacing:0.07em; text-transform:uppercase; color:var(--ink); text-align:center; }
+  .tool-badge{ position:absolute; top:-6px; right:-12px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--stamp-red); color:#fff; font-family:'IBM Plex Mono', monospace; font-size:10.5px; line-height:18px; text-align:center; }
+  .tool-badge[hidden]{ display:none; }
+  .tool-overlay{ position:fixed; inset:0; background:rgba(28,37,65,0.55); display:none; align-items:center; justify-content:center; padding:20px; z-index:1000; }
+  .tool-overlay.open{ display:flex; }
+  .tool-modal{ background:var(--manila); border:1px solid var(--manila-dark); border-radius:10px; width:100%; max-width:760px; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.35); }
+  .tool-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 22px; border-bottom:1px solid var(--manila-dark); }
+  .tool-head h2{ margin:0; }
+  .tool-close{ background:none; border:none; font-size:26px; line-height:1; cursor:pointer; color:var(--ink-soft); padding:0 4px; }
+  .tool-close:hover{ color:var(--byzantium); }
+  .tool-body{ padding:18px 22px 22px; overflow-y:auto; flex:1; }
+  .tool-foot{ padding:14px 22px; border-top:1px solid var(--manila-dark); }
+  .tool-foot .status-line{ margin-top:10px; }
+  .filter-note{ display:none; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); background:rgba(112,41,99,0.08); border:1px dashed var(--byzantium); border-radius:6px; padding:8px 12px; margin-bottom:14px; }
+  .filter-note.on{ display:block; }
+  .filter-note button{ background:none; border:none; padding:0; margin-left:6px; color:var(--byzantium); text-decoration:underline; cursor:pointer; font:inherit; }
   .ms-empty{ font-size:12.5px; color:var(--ink-soft); padding:2px 0; }
   .export-card{
     background:var(--card-bg);
@@ -267,8 +294,41 @@
   <a class="back-link" href="https://docs.google.com/spreadsheets/d/1-GefbDhlV0xIL_i_7t15gcUiJin8Z-0xK7nqkf3Pt-4/edit?gid=0#gid=0" target="_blank" rel="noopener">Open Google Sheet &#8599;</a>
   <div class="private-note">Private tool, not linked from the public site</div>
 
-  <div class="panel">
-    <h2 class="section-title">Edit a book</h2>
+  <div class="tool-grid">
+    <button class="tool-tile" type="button" data-open="add"><span class="tool-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg></span><span class="tool-label">Add a book</span></button>
+    <button class="tool-tile" type="button" data-open="edit"><span class="tool-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg></span><span class="tool-label">Edit a book</span></button>
+    <button class="tool-tile" type="button" data-open="filter"><span class="tool-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg><span class="tool-badge" id="filterBadge" hidden></span></span><span class="tool-label">Filter &amp; sort</span></button>
+    <button class="tool-tile" type="button" data-open="post"><span class="tool-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4V5z"/><path d="M8 9h8M8 12h5"/></svg></span><span class="tool-label">Post generator</span></button>
+    <button class="tool-tile" type="button" data-open="export"><span class="tool-icon"><svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.4"/><path d="M4 17l5-5 4 4 3-3 4 4"/></svg></span><span class="tool-label">Image export</span></button>
+  </div>
+
+  <div class="tool-overlay" id="modal-add" aria-hidden="true">
+    <div class="tool-modal" role="dialog" aria-modal="true" aria-label="Add a book">
+      <div class="tool-head">
+        <h2 class="section-title">Add a book</h2>
+        <button class="tool-close" type="button" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tool-body">
+        <div id="addFieldsContainer"><div class="help-line">Loading form...</div></div>
+        <div class="help-line">Adds a new row to the bottom of your Google Sheet. New books show on the public catalog within a minute.</div>
+      </div>
+      <div class="tool-foot">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <button class="btn" id="addSaveBtn" type="button">Add book to sheet</button>
+          <button class="btn-secondary" id="addResetBtn" type="button">Clear form</button>
+        </div>
+        <div class="status-line" id="addStatusLine"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-overlay" id="modal-edit" aria-hidden="true">
+    <div class="tool-modal" role="dialog" aria-modal="true" aria-label="Edit a book">
+      <div class="tool-head">
+        <h2 class="section-title">Edit a book</h2>
+        <button class="tool-close" type="button" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tool-body">
 
     <div class="field" style="position:relative;">
       <label for="editBookSearch">Search for a book (title or author)</label>
@@ -282,10 +342,44 @@
       <div class="status-line" id="editStatusLine"></div>
       <div class="help-line">Changes save directly to your Google Sheet. The public catalog re-reads the sheet on each page load, so updates usually show up within a minute.</div>
     </div>
+      </div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h2 class="section-title">Post generator</h2>
+  <div class="tool-overlay" id="modal-filter" aria-hidden="true">
+    <div class="tool-modal" role="dialog" aria-modal="true" aria-label="Filter &amp; sort">
+      <div class="tool-head">
+        <h2 class="section-title">Filter &amp; sort</h2>
+        <button class="tool-close" type="button" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tool-body">
+    <div class="help-line" style="margin:0 0 14px;">Optional. Applies to both the Post generator and the Image export below. Leave it empty to use them exactly as before.</div>
+
+    <div class="field">
+      <label>Filters (a book must match every row)</label>
+      <div id="filterRows"></div>
+      <button class="btn-secondary" id="addFilterBtn" type="button">+ Add filter</button>
+    </div>
+
+    <div class="field">
+      <label>Sort order</label>
+      <div id="sortRows"></div>
+    </div>
+
+    <div class="filter-summary" id="filterSummary"></div>
+    <button class="btn-secondary" id="resetFilterBtn" type="button">Reset filters &amp; sorting</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tool-overlay" id="modal-post" aria-hidden="true">
+    <div class="tool-modal" role="dialog" aria-modal="true" aria-label="Post generator">
+      <div class="tool-head">
+        <h2 class="section-title">Post generator</h2>
+        <button class="tool-close" type="button" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tool-body">
+        <div class="filter-note" id="postFilterNote"></div>
 
     <div class="field">
       <label for="templateSelect">Post template</label>
@@ -312,12 +406,19 @@
     </div>
     <button class="btn" id="generateBtn" disabled>Generate post</button>
     <div class="status-line" id="statusLine">Loading books from your sheet...</div>
+  <div id="output"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="output"></div>
-
-  <div class="panel">
-    <h2 class="section-title">Image export</h2>
+  <div class="tool-overlay" id="modal-export" aria-hidden="true">
+    <div class="tool-modal" role="dialog" aria-modal="true" aria-label="Image export">
+      <div class="tool-head">
+        <h2 class="section-title">Image export</h2>
+        <button class="tool-close" type="button" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tool-body">
+        <div class="filter-note" id="exportFilterNote"></div>
 
     <div class="field">
       <label for="exportModeSelect">Select books by</label>
@@ -356,6 +457,20 @@
     <div class="help-line" id="dateRangeHelp" style="display:none;"></div>
 
     <div class="field">
+      <label for="headerSelect">Image header (what these books are)</label>
+      <select id="headerSelect">
+        <option value="New ARC/ALC Sign Ups and Releases">New ARC/ALC Sign Ups and Releases</option>
+        <option value="New Releases">New Releases</option>
+        <option value="Open ARC/ALC Sign Ups">Open ARC/ALC Sign Ups</option>
+        <option value="Books On Sale">Books On Sale</option>
+        <option value="Pre-Orders Now Open">Pre-Orders Now Open</option>
+        <option value="Release Day">Release Day</option>
+        <option value="__custom__">Custom...</option>
+      </select>
+      <input type="text" id="headerCustom" placeholder="Type your own header, e.g. Cover Reveals" maxlength="60" style="display:none; margin-top:8px;">
+    </div>
+
+    <div class="field">
       <label for="formatSelect">Format</label>
       <select id="formatSelect">
         <option value="post">IG post (4:5)</option>
@@ -364,9 +479,11 @@
     </div>
     <button class="btn" id="exportBtn" disabled>Generate images</button>
     <div class="status-line" id="exportStatusLine">Waiting on your book data...</div>
+  <div id="exportOutput"></div>
+      </div>
+    </div>
   </div>
 
-  <div id="exportOutput"></div>
 </div>
 
 <script>
@@ -399,7 +516,10 @@
     1. Open your Google Sheet (the one SHEET_CSV_URL above points to).
     2. Extensions > Apps Script.
     3. Delete any starter code and paste in the contents of the
-       "Code.gs" file provided alongside this page.
+       "Code.gs" file provided alongside this page. (If you set this up
+       before: paste the NEW Code.gs over the old one, then Deploy >
+       Manage deployments > pencil icon > Version: "New version" > Deploy.
+       The new script adds the "Add a book" feature.)
     4. In that script, change WRITE_SECRET to any private string you
        make up -- then paste that same string into WRITE_SECRET below.
     5. Deploy > New deployment > select type "Web app".
@@ -429,6 +549,7 @@
     { key: 'Title', label: 'Title', type: 'text' },
     { key: 'Author', label: 'Author', type: 'text' },
     { key: 'Series', label: 'Series', type: 'text' },
+    { key: 'Series Index', label: 'Series Index (just the number)', type: 'text', hint: 'Shows on the catalog as "Series name, #1".' },
     { key: 'Social Media', label: 'Social Media', type: 'text' },
     { key: 'Genre', label: 'Genre (comma-separated)', type: 'text' },
     { key: 'Tropes', label: 'Tropes', type: 'checklist' },
@@ -451,6 +572,7 @@
   function createMultiSelect(root, opts){
     opts = opts || {};
     const noun = opts.noun || 'item';
+    const onChange = opts.onChange || function(){};
     let options = [];
     const selected = new Set();
 
@@ -510,6 +632,7 @@
         cb.addEventListener('change', function(){
           if(cb.checked) selected.add(opt); else selected.delete(opt);
           updateSummary();
+          onChange();
         });
         const span = document.createElement('span');
         span.textContent = opt;
@@ -524,21 +647,26 @@
     search.addEventListener('input', renderList);
     allBtn.addEventListener('click', function(){
       visibleOptions().forEach(o => selected.add(o));
-      renderList(); updateSummary();
+      renderList(); updateSummary(); onChange();
     });
     clearBtn.addEventListener('click', function(){
       selected.clear();
-      renderList(); updateSummary();
+      renderList(); updateSummary(); onChange();
     });
     document.addEventListener('click', function(e){
       if(!root.contains(e.target)) panel.style.display = 'none';
     });
 
     return {
-      setOptions: function(values){
+      // keep = true: keep the picks that are still valid (used when options narrow)
+      setOptions: function(values, keep){
         options = values.slice();
-        selected.clear();
-        search.value = '';
+        if(keep){
+          [...selected].forEach(v => { if(!options.includes(v)) selected.delete(v); });
+        } else {
+          selected.clear();
+          search.value = '';
+        }
         renderList(); updateSummary();
       },
       getSelected: function(){ return options.filter(o => selected.has(o)); }
@@ -559,12 +687,34 @@
     return value.split(',').map(s=>s.trim()).filter(Boolean);
   }
 
+  // Understands old-style cells like "Love & Legacy (Book #1)" so series
+  // filtering/sorting still works before the sheet has been split in two.
+  function parseSeriesLegacy(text){
+    text = (text || '').trim();
+    let m = text.match(/^(.*?)[\s,]*\(\s*(?:book|bk|no\.?|number|#)?\s*#?\s*(\d+(?:\.\d+)?)\s*\)\s*$/i);
+    if(!m) m = text.match(/^(.*?)[\s,:\-]+(?:book|bk)\s*#?\s*(\d+(?:\.\d+)?)\s*$/i);
+    if(!m || !m[1].trim()) return null;
+    return { series: m[1].trim(), index: Number(m[2]) };
+  }
+
   function rowToBook(row){
     const rawDate = getField(row, DATE_FIELD_NAME);
+    const seriesRaw = getField(row, 'Series');
+    const seriesIdxRaw = getField(row, 'Series Index');
+    let seriesName = seriesRaw;
+    let seriesNum = parseFloat((seriesIdxRaw.match(/\d+(?:\.\d+)?/) || [''])[0]);
+    if(!seriesIdxRaw){
+      const legacy = parseSeriesLegacy(seriesRaw);
+      if(legacy){ seriesName = legacy.series; seriesNum = legacy.index; }
+    }
     return {
       title: getField(row, 'Title'),
       author: getField(row, 'Author'),
       socialMedia: getField(row, 'Social Media'),
+      seriesName: seriesName,
+      seriesNum: isNaN(seriesNum) ? null : seriesNum,
+      tropes: splitList(getField(row, 'Tropes')),
+      arcDate: parseSheetDate(getField(row, 'ARC Release Date')),
       cover: getField(row, 'Cover URL'),
       genres: splitList(getField(row, 'Genre')),
       platforms: splitList(getField(row, 'Platform')),
@@ -618,6 +768,8 @@
         BOOKS = ALL_BOOKS.filter(b => b.visibility !== 'hide');
         populateBatches();
         populateGroupValues();
+        refreshFilterOptions(0);
+        renderAddForm();
         document.getElementById('statusLine').textContent = `Loaded ${BOOKS.length} books.`;
         document.getElementById('generateBtn').disabled = false;
         document.getElementById('exportStatusLine').textContent = `Loaded ${BOOKS.length} books.`;
@@ -680,7 +832,7 @@
   let currentEditIndex = null;
   let checklistWraps = {}; // fieldKey -> wrap element, read at save time
 
-  function fieldId(key){ return 'edit_' + key.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
+  function fieldId(key, prefix){ return (prefix || 'edit') + '_' + key.toLowerCase().replace(/[^a-z0-9]+/g, '-'); }
 
   function selectBookByIndex(idx){
     const book = ALL_BOOKS[idx];
@@ -762,7 +914,7 @@
       const json = await res.json();
       if(json.secure_url){
         coverInput.value = json.secure_url;
-        statusEl.textContent = 'Cover image uploaded. Remember to still click "Save changes to sheet".';
+        statusEl.textContent = 'Cover image uploaded. Remember to still save the book.';
       } else {
         statusEl.textContent = 'Upload failed: ' + (json.error ? json.error.message : 'unknown error');
       }
@@ -798,7 +950,7 @@
     return result.sort((a,b)=> a.localeCompare(b, undefined, {sensitivity:'base'}));
   }
 
-  function renderChecklistField(f, currentValue, wrap){
+  function renderChecklistField(f, currentValue, wrap, store){
     let knownOptions = collectExistingValues(f.key);
     // Normalize this book's own values to match the canonical casing
     // already in the list, so a mismatched-case value doesn't create
@@ -889,14 +1041,13 @@
     });
 
     wrap._getChecklistValue = function(){ return [...selected].join(', '); };
-    checklistWraps[f.key] = wrap;
+    (store || checklistWraps)[f.key] = wrap;
   }
 
-  function renderEditForm(book){
-    const container = document.getElementById('editFieldsContainer');
+  // Builds the book form into `container`. getVal(key) gives each field's
+  // starting value; prefix keeps element ids unique per form (edit / add).
+  function renderFieldsForm(container, getVal, prefix, store, statusEl){
     container.innerHTML = '';
-    checklistWraps = {};
-    const statusEl = document.getElementById('editStatusLine');
 
     EDITABLE_FIELDS.forEach(f=>{
       const wrap = document.createElement('div');
@@ -906,24 +1057,25 @@
       label.textContent = f.label;
       wrap.appendChild(label);
 
-      const currentValue = getField(book.raw, f.key);
+      const currentValue = getVal(f.key);
+      const id = fieldId(f.key, prefix);
 
       if(f.type === 'textarea'){
-        label.setAttribute('for', fieldId(f.key));
+        label.setAttribute('for', id);
         const ta = document.createElement('textarea');
-        ta.id = fieldId(f.key);
+        ta.id = id;
         ta.rows = 4;
         ta.value = currentValue;
         wrap.appendChild(ta);
 
       } else if(f.type === 'checklist'){
-        renderChecklistField(f, currentValue, wrap);
+        renderChecklistField(f, currentValue, wrap, store);
 
       } else if(f.type === 'cover'){
-        label.setAttribute('for', fieldId(f.key));
+        label.setAttribute('for', id);
         const input = document.createElement('input');
         input.type = 'text';
-        input.id = fieldId(f.key);
+        input.id = id;
         input.value = currentValue;
         input.placeholder = 'Paste an image URL, or upload a file below';
         wrap.appendChild(input);
@@ -961,17 +1113,149 @@
         wrap.appendChild(uploadRow);
 
       } else {
-        label.setAttribute('for', fieldId(f.key));
+        label.setAttribute('for', id);
         const input = document.createElement('input');
         input.type = 'text';
-        input.id = fieldId(f.key);
+        input.id = id;
         input.value = currentValue;
         wrap.appendChild(input);
+      }
+
+      if(f.hint){
+        const hint = document.createElement('div');
+        hint.className = 'help-line';
+        hint.textContent = f.hint;
+        wrap.appendChild(hint);
       }
 
       container.appendChild(wrap);
     });
   }
+
+  function collectFormFields(prefix, store){
+    const fields = {};
+    EDITABLE_FIELDS.forEach(f=>{
+      if(f.type === 'checklist'){
+        const wrap = store[f.key];
+        fields[f.key] = wrap && wrap._getChecklistValue ? wrap._getChecklistValue() : '';
+      } else {
+        const el = document.getElementById(fieldId(f.key, prefix));
+        fields[f.key] = el ? el.value.trim() : '';
+      }
+    });
+    return fields;
+  }
+
+  function renderEditForm(book){
+    checklistWraps = {};
+    // Old-style "Series (Book #1)" cells get split in the form, so saving the
+    // book also tidies it into the two new columns.
+    const rawSeries = getField(book.raw, 'Series');
+    const rawIndex = getField(book.raw, 'Series Index');
+    const legacy = !rawIndex ? parseSeriesLegacy(rawSeries) : null;
+    const getVal = function(key){
+      if(legacy && key === 'Series') return legacy.series;
+      if(legacy && key === 'Series Index') return String(legacy.index);
+      return getField(book.raw, key);
+    };
+    renderFieldsForm(document.getElementById('editFieldsContainer'), getVal, 'edit', checklistWraps, document.getElementById('editStatusLine'));
+  }
+
+  // ---------- Add a book ----------
+  let addChecklistWraps = {};
+
+  function renderAddForm(){
+    addChecklistWraps = {};
+    renderFieldsForm(document.getElementById('addFieldsContainer'), function(){ return ''; }, 'add', addChecklistWraps, document.getElementById('addStatusLine'));
+  }
+
+  // Re-reads books after an add/edit so every dropdown reflects the change.
+  function refreshAfterDataChange(){
+    BOOKS = ALL_BOOKS.filter(b => b.visibility !== 'hide');
+    populateBatches();
+    populateGroupValues();
+    refreshFilterOptions(0);
+  }
+
+  function skippedNote(json){
+    return (json.skipped && json.skipped.length)
+      ? ` Note: these fields have no matching column in your sheet and weren't saved: ${json.skipped.join(', ')}.`
+      : '';
+  }
+
+  // ---------- Tool pop-ups (launcher tiles) ----------
+  const TOOL_FOCUS = { add: '#add_title', edit: '#editBookSearch' };
+
+  function closeTools(){
+    document.querySelectorAll('.tool-overlay.open').forEach(function(ov){
+      ov.classList.remove('open');
+      ov.setAttribute('aria-hidden', 'true');
+    });
+    document.body.style.overflow = '';
+  }
+  function openTool(name){
+    const ov = document.getElementById('modal-' + name);
+    if(!ov) return;
+    closeTools();
+    ov.classList.add('open');
+    ov.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    const f = TOOL_FOCUS[name] && document.querySelector(TOOL_FOCUS[name]);
+    if(f) f.focus();
+  }
+  document.addEventListener('click', function(e){
+    const opener = e.target.closest('[data-open]');
+    if(opener){ openTool(opener.getAttribute('data-open')); return; }
+    if(e.target.closest('[data-close]')) closeTools();
+  });
+  document.addEventListener('mousedown', function(e){
+    if(e.target.classList && e.target.classList.contains('tool-overlay')) closeTools();
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeTools();
+  });
+
+  document.getElementById('addResetBtn').addEventListener('click', function(){
+    renderAddForm();
+    document.getElementById('addStatusLine').textContent = '';
+  });
+
+  document.getElementById('addSaveBtn').addEventListener('click', async function(){
+    const statusEl = document.getElementById('addStatusLine');
+    const btn = this;
+
+    if(!GAS_WEBAPP_URL || GAS_WEBAPP_URL.startsWith('PASTE_YOUR')){
+      statusEl.textContent = 'The Google Sheet write endpoint isn\'t configured yet -- see the setup comment near the top of this file.';
+      return;
+    }
+    const fields = collectFormFields('add', addChecklistWraps);
+    if(!fields['Title']){
+      statusEl.textContent = 'Enter a title first.';
+      return;
+    }
+
+    btn.disabled = true;
+    statusEl.textContent = 'Adding...';
+    try {
+      const res = await fetch(GAS_WEBAPP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ secret: WRITE_SECRET, action: 'add', fields: fields })
+      });
+      const json = await res.json();
+      if(json.success){
+        ALL_BOOKS.push(rowToBook(fields));
+        refreshAfterDataChange();
+        statusEl.textContent = `Added "${fields['Title']}" (row ${json.row}).` + skippedNote(json);
+        renderAddForm();
+      } else {
+        statusEl.textContent = 'Could not add: ' + json.error;
+      }
+    } catch(err){
+      statusEl.textContent = 'Could not add: ' + err.message;
+    }
+    btn.disabled = false;
+  });
 
   document.getElementById('editSaveBtn').addEventListener('click', async function(){
     const statusEl = document.getElementById('editStatusLine');
@@ -986,16 +1270,7 @@
       return;
     }
 
-    const fields = {};
-    EDITABLE_FIELDS.forEach(f=>{
-      if(f.type === 'checklist'){
-        const wrap = checklistWraps[f.key];
-        fields[f.key] = wrap && wrap._getChecklistValue ? wrap._getChecklistValue() : '';
-      } else {
-        const el = document.getElementById(fieldId(f.key));
-        fields[f.key] = el ? el.value.trim() : '';
-      }
-    });
+    const fields = collectFormFields('edit', checklistWraps);
 
     saveBtn.disabled = true;
     statusEl.textContent = 'Saving...';
@@ -1015,7 +1290,7 @@
       });
       const json = await res.json();
       if(json.success){
-        statusEl.textContent = `Saved (row ${json.row}). It may take a minute for the public site to reflect this.`;
+        statusEl.textContent = `Saved (row ${json.row}). It may take a minute for the public site to reflect this.` + skippedNote(json);
         selectedBookOriginal = { title: fields['Title'], author: fields['Author'] };
         if(currentEditIndex !== null && ALL_BOOKS[currentEditIndex]){
           ALL_BOOKS[currentEditIndex].title = fields['Title'];
@@ -1025,7 +1300,9 @@
             const key = Object.keys(ALL_BOOKS[currentEditIndex].raw).find(k => k.trim().toLowerCase() === f.key.trim().toLowerCase());
             if(key) ALL_BOOKS[currentEditIndex].raw[key] = fields[f.key];
           });
+          Object.assign(ALL_BOOKS[currentEditIndex], rowToBook(ALL_BOOKS[currentEditIndex].raw));
           editBookSearch.value = `${fields['Title']}${fields['Author'] ? ' — ' + fields['Author'] : ''}`;
+          refreshAfterDataChange();
         }
       } else {
         statusEl.textContent = 'Could not save: ' + json.error;
@@ -1036,6 +1313,218 @@
 
     saveBtn.disabled = false;
   });
+
+  // ---------- Filter & sort (shared by Post generator + Image export) ----------
+
+  const FILTER_FIELDS = {
+    author:   { label: 'Author',   get: b => [b.author].filter(Boolean) },
+    series:   { label: 'Series',   get: b => [b.seriesName].filter(Boolean) },
+    genre:    { label: 'Genre',    get: b => b.genres },
+    tropes:   { label: 'Tropes',   get: b => b.tropes },
+    platform: { label: 'Platform', get: b => b.platforms },
+    batch:    { label: 'Batch',    get: b => [b.batchNo].filter(Boolean) }
+  };
+
+  const SORT_FIELDS = [
+    { key: '',        label: '(none)' },
+    { key: 'author',  label: 'Author' },
+    { key: 'series',  label: 'Series (then book number)' },
+    { key: 'title',   label: 'Title' },
+    { key: 'release', label: 'Release date' },
+    { key: 'arc',     label: 'ARC release date' },
+    { key: 'batch',   label: 'Batch' }
+  ];
+
+  const filterRows = [];  // { el, fieldSel, ms }
+  const sortRows = [];    // { fieldSel, dirSel }
+
+  function uniqueSorted(values){
+    return [...new Set(values)].filter(Boolean)
+      .sort((a,b)=> a.localeCompare(b, undefined, {numeric:true, sensitivity:'base'}));
+  }
+
+  // Recomputes the options of filter rows from startIdx onward, so each row
+  // only offers values that still exist after the rows above it. For example:
+  // Author = "Amber Elwood" -> the Series row only lists her series.
+  function refreshFilterOptions(startIdx){
+    let pool = BOOKS.slice();
+    filterRows.forEach((row, i)=>{
+      const get = FILTER_FIELDS[row.fieldSel.value].get;
+      if(i >= startIdx){
+        row.ms.setOptions(uniqueSorted(pool.flatMap(get)), true);
+      }
+      const sel = row.ms.getSelected();
+      if(sel.length) pool = pool.filter(b => get(b).some(v => sel.includes(v)));
+    });
+    updateFilterSummary();
+  }
+
+  function addFilterRow(defaultField){
+    const el = document.createElement('div');
+    el.className = 'filter-row';
+
+    const fieldSel = document.createElement('select');
+    Object.keys(FILTER_FIELDS).forEach(k=>{
+      const opt = document.createElement('option');
+      opt.value = k; opt.textContent = FILTER_FIELDS[k].label;
+      fieldSel.appendChild(opt);
+    });
+    fieldSel.value = defaultField || 'author';
+
+    const msWrap = document.createElement('div');
+    msWrap.className = 'ms-wrap';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-secondary filter-remove';
+    removeBtn.textContent = '\u00D7';
+    removeBtn.title = 'Remove this filter';
+
+    el.appendChild(fieldSel); el.appendChild(msWrap); el.appendChild(removeBtn);
+    document.getElementById('filterRows').appendChild(el);
+
+    const row = { el, fieldSel, ms: null };
+    row.ms = createMultiSelect(msWrap, {
+      noun: 'value',
+      onChange: function(){ refreshFilterOptions(filterRows.indexOf(row) + 1); }
+    });
+    filterRows.push(row);
+
+    fieldSel.addEventListener('change', function(){
+      row.ms.setOptions([], false);          // different field: start with no picks
+      refreshFilterOptions(filterRows.indexOf(row));
+    });
+    removeBtn.addEventListener('click', function(){
+      const i = filterRows.indexOf(row);
+      filterRows.splice(i, 1);
+      el.remove();
+      refreshFilterOptions(Math.max(i, 0));
+    });
+
+    refreshFilterOptions(filterRows.length - 1);
+  }
+
+  function addSortRow(label){
+    const el = document.createElement('div');
+    el.className = 'sort-row';
+    const lab = document.createElement('div');
+    lab.className = 'sort-label';
+    lab.textContent = label;
+
+    const fieldSel = document.createElement('select');
+    SORT_FIELDS.forEach(f=>{
+      const opt = document.createElement('option');
+      opt.value = f.key; opt.textContent = f.label;
+      fieldSel.appendChild(opt);
+    });
+    const dirSel = document.createElement('select');
+    [['asc','A \u2192 Z / oldest first'],['desc','Z \u2192 A / newest first']].forEach(([v,t])=>{
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = t;
+      dirSel.appendChild(opt);
+    });
+
+    el.appendChild(lab); el.appendChild(fieldSel); el.appendChild(dirSel);
+    document.getElementById('sortRows').appendChild(el);
+    sortRows.push({ fieldSel, dirSel });
+    fieldSel.addEventListener('change', updateFilterSummary);
+    dirSel.addEventListener('change', updateFilterSummary);
+  }
+
+  // Compares two values, always putting blanks last regardless of direction.
+  function cmpBlankLast(aBlank, bBlank, dir, valueCmp){
+    if(aBlank && bBlank) return 0;
+    if(aBlank) return 1;
+    if(bBlank) return -1;
+    return dir * valueCmp();
+  }
+
+  function compareBy(key, a, b, dir){
+    const text = (x, y) => x.localeCompare(y, undefined, {numeric:true, sensitivity:'base'});
+    if(key === 'author')  return cmpBlankLast(!a.author, !b.author, dir, () => text(a.author, b.author));
+    if(key === 'title')   return dir * text(a.title, b.title);
+    if(key === 'batch')   return cmpBlankLast(!a.batchNo, !b.batchNo, dir, () => text(a.batchNo, b.batchNo));
+    if(key === 'release') return cmpBlankLast(!a.date, !b.date, dir, () => a.date - b.date);
+    if(key === 'arc')     return cmpBlankLast(!a.arcDate, !b.arcDate, dir, () => a.arcDate - b.arcDate);
+    if(key === 'series'){
+      const c = cmpBlankLast(!a.seriesName, !b.seriesName, dir, () => text(a.seriesName, b.seriesName));
+      if(c !== 0) return c;
+      if(!a.seriesName) return 0;
+      // Within one series, books always run Book 1, 2, 3...
+      const an = a.seriesNum === null ? Infinity : a.seriesNum;
+      const bn = b.seriesNum === null ? Infinity : b.seriesNum;
+      return an === bn ? 0 : (an < bn ? -1 : 1);
+    }
+    return 0;
+  }
+
+  function sortLevels(){
+    return sortRows
+      .map(r => ({ key: r.fieldSel.value, dir: r.dirSel.value === 'desc' ? -1 : 1 }))
+      .filter(l => l.key);
+  }
+
+  // Applies the Filter & sort panel to a list of books. With nothing set,
+  // the list comes back untouched (same books, same order).
+  function applyFilterSort(books){
+    let out = books.slice();
+    filterRows.forEach(row=>{
+      const sel = row.ms.getSelected();
+      if(!sel.length) return;
+      const get = FILTER_FIELDS[row.fieldSel.value].get;
+      out = out.filter(b => get(b).some(v => sel.includes(v)));
+    });
+    const levels = sortLevels();
+    if(levels.length){
+      out.sort((a,b)=>{
+        for(const l of levels){
+          const c = compareBy(l.key, a, b, l.dir);
+          if(c !== 0) return c;
+        }
+        return a.title.localeCompare(b.title, undefined, {sensitivity:'base'});
+      });
+    }
+    return out;
+  }
+
+  function updateFilterSummary(){
+    const el = document.getElementById('filterSummary');
+    if(!el) return;
+    const activeFilters = filterRows.filter(r => r.ms.getSelected().length).length;
+    const levels = sortLevels().length;
+    const badge = document.getElementById('filterBadge');
+    const notes = ['postFilterNote', 'exportFilterNote'].map(id => document.getElementById(id));
+    if(!activeFilters && !levels){
+      el.textContent = 'No filters or sorting set.';
+      if(badge) badge.hidden = true;
+      notes.forEach(n => { if(n){ n.classList.remove('on'); n.innerHTML = ''; } });
+      return;
+    }
+    const n = applyFilterSort(BOOKS).length;
+    if(badge){ badge.textContent = activeFilters + levels; badge.hidden = false; }
+    notes.forEach(nt => {
+      if(!nt) return;
+      nt.classList.add('on');
+      nt.innerHTML = `Filter &amp; sort is on: ${n} of ${BOOKS.length} books match.<button type="button" data-open="filter">Change</button>`;
+    });
+    const parts = [];
+    if(activeFilters) parts.push(`${activeFilters} filter${activeFilters > 1 ? 's' : ''}`);
+    if(levels) parts.push(`${levels} sort level${levels > 1 ? 's' : ''}`);
+    el.textContent = `${parts.join(' + ')} active \u2014 ${n} of ${BOOKS.length} books match.`;
+  }
+
+  document.getElementById('addFilterBtn').addEventListener('click', function(){ addFilterRow(); });
+  document.getElementById('resetFilterBtn').addEventListener('click', function(){
+    while(filterRows.length){ filterRows.pop().el.remove(); }
+    addFilterRow();
+    sortRows.forEach(r => { r.fieldSel.value = ''; r.dirSel.value = 'asc'; });
+    refreshFilterOptions(0);
+  });
+  addFilterRow();
+  addSortRow('Sort by');
+  addSortRow('Then by');
+  addSortRow('Then by');
+  updateFilterSummary();
 
   function buildPages(catalogLink, lines, closing){
     const baseHeader = `New ARC sign-ups have been added to the catalog (${catalogLink})`;
@@ -1125,9 +1614,10 @@
       return;
     }
     // Books are listed batch by batch, in the order the batches sort.
-    const batchBooks = batches.flatMap(bn => BOOKS.filter(b => b.batchNo === bn));
+    // Then the Filter & sort panel narrows/reorders them (if anything is set).
+    const batchBooks = applyFilterSort(batches.flatMap(bn => BOOKS.filter(b => b.batchNo === bn)));
     if(batchBooks.length === 0){
-      document.getElementById('statusLine').textContent = 'No books found for the selected batches.';
+      document.getElementById('statusLine').textContent = 'No books match the selected batches and filters.';
       document.getElementById('output').innerHTML = '';
       return;
     }
@@ -1249,6 +1739,20 @@
     ctx.closePath();
   }
 
+  const headerSelect = document.getElementById('headerSelect');
+  const headerCustom = document.getElementById('headerCustom');
+  headerSelect.addEventListener('change', function(){
+    const isCustom = headerSelect.value === '__custom__';
+    headerCustom.style.display = isCustom ? '' : 'none';
+    if(isCustom) headerCustom.focus();
+  });
+  function getExportHeader(){
+    if(headerSelect.value === '__custom__'){
+      return headerCustom.value.trim() || 'New ARC/ALC Sign Ups and Releases';
+    }
+    return headerSelect.value;
+  }
+
   async function renderChunk(chunkBooks, chunkIndex, totalChunks, format, catalogLink, showSocial, showDate){
     const width = 1080;
     const height = format === 'story' ? 1920 : 1350;
@@ -1270,7 +1774,7 @@
     ctx.textBaseline = 'alphabetic';
     ctx.fillText('For The Love of Pages', pad + 76, format === 'story' ? 76 : 66);
     ctx.font = "500 20px 'IBM Plex Mono', monospace";
-    ctx.fillText('New ARC/ALC Sign Ups and Releases', pad + 76, format === 'story' ? 108 : 98);
+    ctx.fillText(truncateToWidth(ctx, getExportHeader(), width - pad * 2 - 76), pad + 76, format === 'story' ? 108 : 98);
     ctx.strokeStyle = '#1C2541';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -1432,9 +1936,9 @@
         exportStatus.textContent = 'Start date is after end date.';
         return;
       }
-      filtered = BOOKS
+      filtered = applyFilterSort(BOOKS
         .filter(b => b.date && b.date >= start && b.date <= end)
-        .sort((a,b)=> a.date - b.date || a.title.localeCompare(b.title));
+        .sort((a,b)=> a.date - b.date || a.title.localeCompare(b.title)));
       fileTag = `${startRaw}_to_${endRaw}`;
       if(filtered.length === 0){
         exportStatus.textContent = `No books with a "${DATE_FIELD_NAME}" in that range.`;
@@ -1449,9 +1953,9 @@
       }
       const getter = groupByField(groupKey);
       // A book is included if it matches ANY selected value (each book once).
-      filtered = BOOKS
+      filtered = applyFilterSort(BOOKS
         .filter(b => getter(b).some(v => groupValues.includes(v)))
-        .sort((a,b)=> a.title.localeCompare(b.title));
+        .sort((a,b)=> a.title.localeCompare(b.title)));
       fileTag = (groupValues.length > 3
         ? groupValues.length + '-selections'
         : groupValues.join('-')).replace(/[^a-z0-9]+/gi, '-').toLowerCase();
